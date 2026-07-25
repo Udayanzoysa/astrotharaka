@@ -1,0 +1,891 @@
+@import "tailwindcss";
+
+:root,
+[data-theme="dark"] {
+  --bg: #0b0f19;
+  --bg-card: rgba(19, 27, 46, 0.8);
+  --accent: #f3e5ab;
+  --accent-hover: #00f0ff;
+  --text: #ffffff;
+  --text-muted: #8a99ad;
+  --border: rgba(138, 153, 173, 0.35);
+  --danger: #ff8f8f;
+  --warning-bg: rgba(243, 229, 171, 0.12);
+  --warning-border: rgba(243, 229, 171, 0.45);
+  --nav-border: rgba(0, 240, 255, 0.18);
+  --input-bg: rgba(11, 15, 25, 0.65);
+  --shadow-cta: 0 0 20px rgba(0, 240, 255, 0.2);
+  --select-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%238a99ad' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  --picker-icon-filter: invert(0.85);
+}
+
+[data-theme="light"] {
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --accent: #d4af37;
+  --accent-hover: #007b8a;
+  --text: #0b0f19;
+  --text-muted: #475569;
+  --border: rgba(71, 85, 105, 0.25);
+  --danger: #b91c1c;
+  --warning-bg: rgba(212, 175, 55, 0.12);
+  --warning-border: rgba(212, 175, 55, 0.45);
+  --nav-border: rgba(0, 123, 138, 0.2);
+  --input-bg: #ffffff;
+  --shadow-cta: 0 0 18px rgba(0, 123, 138, 0.18);
+  --select-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  --picker-icon-filter: invert(0.2);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--bg-card);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border);
+  --font-display: var(--font-cinzel);
+  --font-heading: var(--font-poppins);
+  --font-sans: var(--font-poppins);
+  --font-sinhala: var(--font-noto-sinhala);
+  --font-sinhala-display: var(--font-abhaya);
+  --font-sinhala-serif: var(--font-noto-serif-sinhala);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html:has(.home-lock),
+body:has(.home-lock) {
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Scrollable marketing home — first screen still fills viewport */
+.home-page {
+  position: relative;
+}
+
+.home-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}
+
+.home-hero {
+  isolation: isolate;
+  content-visibility: visible;
+}
+
+.site-header .nav-text {
+  font-size: 0.9375rem; /* 15px — shared for brand, nav, login, register */
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  font-family:
+    var(--font-poppins),
+    var(--font-noto-sinhala),
+    var(--font-noto-serif-sinhala),
+    system-ui,
+    sans-serif;
+}
+
+/* Sinhala glyphs read larger — keep header text a bit smaller, still uniform */
+html[lang="si"] .site-header .nav-text,
+html[lang="si"] .site-header button.nav-text,
+html[lang="si"] .site-header a.nav-text {
+  font-size: 0.875rem; /* 14px */
+  font-family:
+    var(--font-noto-sinhala),
+    var(--font-noto-serif-sinhala),
+    var(--font-poppins),
+    sans-serif;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+.home-hero__logo {
+  /* Opacity/transform only — filter animations are non-composited and hurt CLS/TBT */
+  filter: drop-shadow(0 0 14px color-mix(in srgb, #e8c96a 32%, transparent));
+  animation: guestStarPulse 2.8s ease-in-out infinite;
+}
+
+.home-hero__title {
+  font-size: clamp(1.15rem, 2.2vw + 0.7rem, 2.35rem);
+  line-height: 1.28;
+}
+
+html[lang="si"] .home-hero__title {
+  font-size: clamp(1.2rem, 2.4vw + 0.75rem, 2.55rem);
+  line-height: 1.32;
+}
+
+.home-side-orb__mark {
+  width: 58%;
+  height: 58%;
+  border-radius: 0;
+  overflow: visible;
+  z-index: 2;
+  background: transparent;
+}
+
+.home-side-orb--left .guest-star-orbit {
+  animation-direction: normal;
+}
+
+.home-side-orb--right .guest-star-orbit {
+  animation-direction: reverse;
+  animation-duration: 7.2s;
+}
+
+.home-section__eyebrow {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.home-section__title,
+.home-offer__title {
+  font-size: clamp(1.45rem, 1.8vw + 1rem, 2.4rem);
+  line-height: 1.25;
+}
+
+.home-offer__veil {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg) 88%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 55%, transparent) 42%,
+      color-mix(in srgb, var(--bg) 92%, transparent) 100%
+    ),
+    radial-gradient(ellipse at 50% 40%, rgba(232, 201, 106, 0.12), transparent 55%);
+}
+
+.home-offer__block {
+  border-top: 1px solid color-mix(in srgb, #e8c96a 28%, transparent);
+  padding-top: 1rem;
+}
+
+.home-offer__cta {
+  animation: pulseGlow 2.2s ease-in-out infinite;
+  will-change: filter;
+}
+
+.home-feature {
+  border-top: 1px solid color-mix(in srgb, #e8c96a 30%, transparent);
+  padding-top: 1rem;
+}
+
+@media (max-height: 740px) {
+  .home-hero__title {
+    font-size: clamp(1.05rem, 1.5vw + 0.65rem, 1.7rem);
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-poppins), var(--font-noto-sinhala), system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+/* Sinhala astrology luxury typography */
+html[lang="si"] body {
+  font-family:
+    var(--font-noto-serif-sinhala),
+    var(--font-abhaya),
+    var(--font-noto-sinhala),
+    serif;
+  line-height: 1.75;
+  letter-spacing: 0.01em;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+html[lang="si"] .font-display,
+html[lang="si"] h1,
+html[lang="si"] h2 {
+  font-family: var(--font-abhaya), var(--font-noto-serif-sinhala), serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+html[lang="si"] .font-heading,
+html[lang="si"] h3,
+html[lang="si"] label span,
+html[lang="si"] button {
+  font-family: var(--font-abhaya), var(--font-noto-serif-sinhala), serif;
+  letter-spacing: 0.015em;
+}
+
+html[lang="si"] p,
+html[lang="si"] input,
+html[lang="si"] select,
+html[lang="si"] textarea {
+  font-family:
+    var(--font-noto-serif-sinhala),
+    var(--font-abhaya),
+    var(--font-noto-sinhala),
+    serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.font-display {
+  font-family: var(--font-cinzel), var(--font-abhaya), serif;
+}
+
+.font-heading {
+  font-family: var(--font-poppins), var(--font-abhaya), var(--font-noto-sinhala), sans-serif;
+}
+
+.font-sinhala-luxury {
+  font-family: var(--font-abhaya), var(--font-noto-serif-sinhala), serif;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+/* Fluid left hero caption — grows with viewport, stays on-screen */
+.hero-caption {
+  max-width: min(36rem, 100%);
+}
+
+.home-form-card {
+  width: 100%;
+  /* Reserve space so GuestInstantReport hydrate does not shift layout (CLS) */
+  min-height: 34rem;
+  box-shadow: 0 12px 40px color-mix(in srgb, #000 28%, transparent);
+}
+
+@media (min-width: 640px) {
+  .home-form-card {
+    min-height: 32rem;
+  }
+}
+
+.home-hero__intro {
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .home-hero__title {
+    font-size: clamp(1rem, 4.2vw + 0.45rem, 1.35rem);
+    -webkit-line-clamp: 2;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .home-hero__title {
+    font-size: clamp(1.25rem, 1.5vw + 0.85rem, 1.85rem);
+  }
+}
+
+.hero-caption__brand {
+  font-size: clamp(0.65rem, 0.3vw + 0.58rem, 0.85rem);
+  letter-spacing: 0.22em;
+}
+
+.hero-caption__title {
+  font-size: clamp(1.05rem, 1.2vw + 0.75rem, 2.85rem);
+  line-height: 1.28;
+  max-height: 22dvh;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+html[lang="si"] .hero-caption__title {
+  font-size: clamp(1.1rem, 1.4vw + 0.8rem, 3.1rem);
+  line-height: 1.32;
+  letter-spacing: 0.02em;
+}
+
+.hero-caption__lead {
+  font-size: clamp(0.8rem, 0.4vw + 0.68rem, 1.15rem);
+  line-height: 1.5;
+  max-width: 34ch;
+}
+
+html[lang="si"] .hero-caption__lead {
+  font-size: clamp(0.85rem, 0.5vw + 0.7rem, 1.22rem);
+  line-height: 1.6;
+  max-width: 28ch;
+}
+
+.hero-caption__note {
+  font-size: clamp(0.68rem, 0.25vw + 0.6rem, 0.8rem);
+  line-height: 1.45;
+}
+
+@media (max-width: 767px) {
+  .hero-caption__title {
+    max-height: none;
+    -webkit-line-clamp: 2;
+    font-size: clamp(1rem, 3.6vw + 0.55rem, 1.35rem);
+  }
+
+  html[lang="si"] .hero-caption__title {
+    font-size: clamp(1.05rem, 3.8vw + 0.55rem, 1.45rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-caption__title {
+    max-height: 38dvh;
+    -webkit-line-clamp: 5;
+  }
+}
+
+@media (max-height: 720px) {
+  .hero-caption__title {
+    font-size: clamp(1.05rem, 1vw + 0.75rem, 1.85rem);
+    max-height: 22dvh;
+  }
+
+  html[lang="si"] .hero-caption__title {
+    font-size: clamp(1.1rem, 1.15vw + 0.8rem, 2rem);
+  }
+
+  .hero-caption__lead {
+    font-size: clamp(0.75rem, 0.3vw + 0.62rem, 0.92rem);
+  }
+
+  .hero-caption__note {
+    display: none;
+  }
+}
+
+@media (max-height: 620px) {
+  .hero-caption__lead {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  border-radius: 1rem;
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.glass-card:hover {
+  border-color: color-mix(in srgb, var(--accent-hover) 45%, var(--border));
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent-hover) 12%, transparent);
+}
+
+.fade-up {
+  animation: fadeUp 700ms ease both;
+}
+
+.fade-up-delay-1 {
+  animation-delay: 120ms;
+}
+
+.fade-up-delay-2 {
+  animation-delay: 240ms;
+}
+
+.fade-up-delay-3 {
+  animation-delay: 360ms;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: translateZ(0);
+  }
+  50% {
+    filter: brightness(1.08);
+    transform: translateZ(0);
+  }
+}
+
+.cta-pulse {
+  animation: pulseGlow 2.8s ease-in-out infinite;
+  will-change: filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-pulse,
+  .home-offer__cta,
+  .fade-up,
+  .fade-up-delay-1,
+  .fade-up-delay-2,
+  .fade-up-delay-3 {
+    animation: none !important;
+  }
+}
+
+/* Accent CTA text must stay dark on cream — do not inherit body white */
+.btn-on-accent {
+  background-color: var(--accent);
+  color: #0b0f19 !important;
+}
+
+@keyframes drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-40px);
+  }
+}
+
+@keyframes guestOrbPulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes guestRingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes guestStarAura {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.85;
+  }
+}
+
+@keyframes guestStarOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes guestStarPulse {
+  0%,
+  100% {
+    opacity: 0.92;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes guestLoadPhraseIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes guestModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes guestSectionIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.guest-glow-btn {
+  animation: pulseGlow 1.4s ease-in-out infinite;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-hover) 35%, transparent);
+}
+
+.guest-modal-backdrop {
+  background: color-mix(in srgb, #05070d 72%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.guest-modal-panel {
+  animation: guestModalIn 320ms ease both;
+}
+
+.guest-orb {
+  animation: guestOrbPulse 1.8s ease-in-out infinite;
+}
+
+.guest-ring {
+  animation: guestRingSpin 3.2s linear infinite;
+}
+
+.guest-star-loader {
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+}
+
+.guest-star-aura {
+  position: absolute;
+  inset: 14%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(245, 220, 130, 0.35) 0%,
+    color-mix(in srgb, var(--accent-hover) 28%, transparent) 42%,
+    transparent 72%
+  );
+  animation: guestStarAura 2.8s ease-in-out infinite;
+}
+
+.guest-star-ring {
+  position: absolute;
+  inset: 10%;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, #e8c96a 35%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, #e8c96a 18%, transparent);
+}
+
+.guest-star-orbit {
+  position: absolute;
+  inset: 10%;
+  border-radius: 9999px;
+  animation: guestStarOrbit 6s linear infinite;
+}
+
+.guest-star-trail {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 250deg,
+    color-mix(in srgb, #f5e6a8 15%, transparent) 280deg,
+    #e8c96a 320deg,
+    #f8f0c8 338deg,
+    color-mix(in srgb, var(--accent-hover) 70%, #e8c96a) 352deg,
+    transparent 360deg
+  );
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  -webkit-mask-image: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2.5px),
+    #000 calc(100% - 2px)
+  );
+  filter: drop-shadow(0 0 6px rgba(232, 201, 106, 0.65));
+}
+
+.guest-star-spark {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  margin-top: -3.5px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff8d6 0%, #e8c96a 55%, transparent 75%);
+  box-shadow: 0 0 12px 3px rgba(232, 201, 106, 0.75);
+}
+
+.guest-star-core-wrap {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.guest-star-core {
+  width: 2.35rem;
+  height: 2.35rem;
+  animation: guestStarPulse 2.4s ease-in-out infinite;
+}
+
+.guest-load-phrase {
+  animation: guestLoadPhraseIn 420ms ease both;
+  min-height: 1.5em;
+}
+
+.guest-preview-para {
+  max-width: 38rem;
+}
+
+.guest-tab-strip {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.guest-tab-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.guest-locked-panel {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg) 55%, transparent),
+    color-mix(in srgb, var(--bg) 88%, transparent) 40%,
+    color-mix(in srgb, #0a0c12 92%, transparent)
+  );
+}
+
+.guest-section-enter {
+  animation: guestSectionIn 420ms ease both;
+}
+
+@keyframes logoAuraPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.92);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 0.7;
+  }
+}
+
+@keyframes logoRingSpin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes logoRingSpinReverse {
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@keyframes logoStarOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logoStarTwinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes logoCorePulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.03);
+  }
+}
+
+.logo-sun {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  z-index: 1;
+  width: min(42vw, 280px);
+  transform: translate(-50%, -50%);
+}
+
+@media (min-width: 768px) {
+  .logo-sun {
+    width: min(34vw, 320px);
+  }
+}
+
+.logo-sun__aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160%;
+  height: 160%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(243, 229, 171, 0.42) 0%,
+    rgba(243, 229, 171, 0.16) 28%,
+    rgba(0, 240, 255, 0.08) 48%,
+    transparent 70%
+  );
+  animation: logoAuraPulse 3.6s ease-in-out infinite;
+}
+
+.logo-sun__ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  border: 1px solid rgba(243, 229, 171, 0.28);
+  box-shadow:
+    0 0 18px rgba(243, 229, 171, 0.18),
+    inset 0 0 18px rgba(243, 229, 171, 0.08);
+}
+
+.logo-sun__ring--a {
+  width: 118%;
+  height: 118%;
+  animation: logoRingSpin 18s linear infinite;
+  border-style: dashed;
+}
+
+.logo-sun__ring--b {
+  width: 142%;
+  height: 142%;
+  border-color: rgba(0, 240, 255, 0.22);
+  animation: logoRingSpinReverse 26s linear infinite;
+}
+
+.logo-sun__orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 132%;
+  height: 132%;
+  transform: translate(-50%, -50%);
+  animation: logoStarOrbit 14s linear infinite;
+}
+
+.logo-sun__orbit--slow {
+  width: 158%;
+  height: 158%;
+  animation-duration: 22s;
+  animation-direction: reverse;
+}
+
+.logo-sun__spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #fff8dc;
+  box-shadow:
+    0 0 8px rgba(243, 229, 171, 0.95),
+    0 0 16px rgba(0, 240, 255, 0.45);
+  animation: logoStarTwinkle 2.4s ease-in-out infinite;
+}
+
+.logo-sun__mark--css {
+  position: relative;
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 35%, #fff8e7 0%, #f0d78a 28%, #c9a227 55%, transparent 72%),
+    radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.2) 0%, transparent 60%);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  animation: logoCorePulse 3.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (min-width: 768px) {
+  .logo-sun__mark--css {
+    opacity: 0.4;
+  }
+}
+
+[data-theme="light"] .logo-sun__aura {
+  background: radial-gradient(
+    circle,
+    rgba(212, 175, 55, 0.28) 0%,
+    rgba(212, 175, 55, 0.1) 36%,
+    transparent 68%
+  );
+}
+
+[data-theme="light"] .logo-sun__mark--css {
+  opacity: 0.4;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero__logo,
+  .guest-star-core,
+  .logo-sun__mark--css,
+  .logo-sun__orbit,
+  .logo-sun__spark {
+    animation: none !important;
+  }
+}
+
+/* Custom Select Chevron arrow and padding alignment */
+select {
+  appearance: none !important;
+  background-image: var(--select-chevron) !important;
+  background-position: right 0.85rem center !important;
+  background-repeat: no-repeat !important;
+  background-size: 1.15rem !important;
+  padding-right: 2.5rem !important;
+}
+
+/* Fix calendar and clock native browser picker indicator visibility in Webkit */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: var(--picker-icon-filter, invert(1)) !important;
+  opacity: 0.65 !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s ease;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+}

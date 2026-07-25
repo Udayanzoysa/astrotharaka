@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build & Output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Environment Variables & Secrets
+.env
+.env.local
+!.env.example
+
+# Logs
+*.log
+
+# OS & Editor Files
+.DS_Store
+.vscode/
+.idea/
+
+# Monorepo & Database Migrations
+.turbo/
+apps/api/prisma/migrations/**/migration_lock.toml.bak
+
+# Uploads
+uploads/
+apps/api/uploads/
+apps/worker/uploads/
+
+# Python Virtual Environments & Cache
+.venv/
+services/astrology-engine/.venv/
+__pycache__/
+services/astrology-engine/__pycache__/
+*.py[cod]
+
+# Project-Specific Local Data & Runtime Files
+.data/
+.tools/
+dump.rdb

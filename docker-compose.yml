@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: astro_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: astro
+      POSTGRES_PASSWORD: astro
+      POSTGRES_DB: astroguruai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U astro -d astroguruai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: astro_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: astro_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  astrology-engine:
+    build:
+      context: ./services/astrology-engine
+    container_name: astro_engine
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      PORT: "8001"
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
