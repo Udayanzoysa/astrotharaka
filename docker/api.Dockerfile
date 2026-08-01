@@ -27,19 +27,18 @@ RUN corepack enable && corepack prepare pnpm@10.33.0 --activate \
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
+COPY apps/api/prisma ./apps/api/prisma
 
-RUN pnpm install --filter @astro/api... --prod --frozen-lockfile
+# Install deps + generate Prisma engine for this image (debian-openssl-3.0.x)
+RUN pnpm install --filter @astro/api... --frozen-lockfile \
+  && pnpm --filter @astro/api exec prisma generate
 
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/packages/shared/package.json ./packages/shared/package.json
 COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/api/prisma ./apps/api/prisma
-COPY --from=build /app/node_modules/.pnpm ./node_modules/.pnpm
-COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 
 WORKDIR /app/apps/api
-RUN npm install -g prisma@6.11.1 \
-  && mkdir -p uploads/reports uploads/notifications uploads/bank-slips
+RUN mkdir -p uploads/reports uploads/notifications uploads/bank-slips
 
 EXPOSE 3000
-CMD ["sh", "-c", "prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/main.js"]

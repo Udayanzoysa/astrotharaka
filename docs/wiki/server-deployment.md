@@ -85,6 +85,16 @@ Both should show your VPS IP before requesting SSL.
 
 ## Troubleshooting
 
+### Prisma: Query Engine for `debian-openssl-3.0.x`
+
+```bash
+cd /opt/taraka
+# after git pull (schema.prisma binaryTargets + api Dockerfile fix):
+docker compose -f docker-compose.prod.yml --env-file .env.production build --no-cache api worker
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+docker compose -f docker-compose.prod.yml --env-file .env.production logs api --tail=40
+```
+
 ### `gcc failed` / `Failed building wheel for pyswisseph`
 
 The astrology-engine image must compile Swiss Ephemeris. The Dockerfile installs `build-essential`. Pull latest and rebuild:

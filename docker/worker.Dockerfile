@@ -35,9 +35,8 @@ COPY apps/worker/package.json ./apps/worker/
 COPY apps/api/package.json ./apps/api/
 COPY apps/api/prisma ./apps/api/prisma
 
-RUN pnpm install --filter @astro/worker... --filter @astro/api... --prod --frozen-lockfile \
-  && npm install -g prisma@6.11.1 \
-  && prisma generate --schema=apps/api/prisma/schema.prisma
+RUN pnpm install --filter @astro/worker... --filter @astro/api... --frozen-lockfile \
+  && pnpm --filter @astro/api exec prisma generate
 
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 COPY --from=build /app/apps/worker/dist ./apps/worker/dist
