@@ -83,6 +83,23 @@ Both should show your VPS IP before requesting SSL.
 
 ---
 
+## Troubleshooting
+
+### `gcc failed` / `Failed building wheel for pyswisseph`
+
+The astrology-engine image must compile Swiss Ephemeris. The Dockerfile installs `build-essential`. Pull latest and rebuild:
+
+```bash
+cd /opt/taraka
+git pull
+docker compose -f docker-compose.prod.yml --env-file .env.production build --no-cache astrology-engine
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+```
+
+Do **not** run `init-ssl.sh` until `docker compose ... up -d --build` succeeds and `nginx` is running.
+
+---
+
 ## 3. Deploy the app
 
 ```bash
