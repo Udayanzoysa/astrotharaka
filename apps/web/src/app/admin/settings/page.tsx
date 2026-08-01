@@ -314,7 +314,7 @@ export default function AdminSettingsPage() {
                   name="faviconUrl"
                   value={branding.faviconUrl}
                   onChange={(e) => setBranding({ ...branding, faviconUrl: e.target.value })}
-                  placeholder="/favicon.ico"
+                  placeholder="/favicon.ico or /favicon.png"
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-3">

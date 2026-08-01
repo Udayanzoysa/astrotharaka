@@ -11,6 +11,13 @@ import { UiProvider } from "@/components/providers/ui-provider";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteThemeApplier } from "@/components/layout/site-theme-applier";
+import {
+  DEFAULT_KEYWORDS,
+  DEFAULT_META_DESCRIPTION,
+  DEFAULT_META_TITLE,
+  DEFAULT_OG_IMAGE,
+  DEFAULT_SITE_URL,
+} from "@/lib/seo-defaults";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -87,24 +94,70 @@ async function loadPublicSettings(): Promise<PublicSiteSettings | null> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await loadPublicSettings();
-  const title = settings?.seo.metaTitle || "Taraka (තාරකා) — AstroAI Lanka";
-  const description =
-    settings?.seo.metaDescription || "Navigating a destiny through the air mass.";
-  const keywords = settings?.seo.keywords
+  const title = settings?.seo.metaTitle?.trim() || DEFAULT_META_TITLE;
+  const description = settings?.seo.metaDescription?.trim() || DEFAULT_META_DESCRIPTION;
+  const keywords = settings?.seo.keywords?.trim()
     ? settings.seo.keywords.split(",").map((k) => k.trim()).filter(Boolean)
-    : undefined;
-  const ogImage = settings?.seo.ogImageUrl || "/brand/taraka-mark.png";
-  const favicon = settings?.branding.faviconUrl || "/favicon.ico";
+    : DEFAULT_KEYWORDS;
+  const ogImage = settings?.seo.ogImageUrl?.trim() || DEFAULT_OG_IMAGE;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || DEFAULT_SITE_URL;
 
   return {
-    title,
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: title,
+      template: `%s | Astro Tharaka (තාරකා)`,
+    },
     description,
     keywords,
-    icons: { icon: favicon },
+    applicationName: "Astro Tharaka",
+    authors: [{ name: "Astro Tharaka" }],
+    creator: "Astro Tharaka",
+    publisher: "Astro Tharaka",
+    category: "astrology",
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+        { url: "/favicon.png", type: "image/png", sizes: "512x512" },
+      ],
+      apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+      shortcut: "/favicon.ico",
+    },
     openGraph: {
+      type: "website",
+      locale: "en_LK",
+      alternateLocale: ["si_LK", "ta_LK"],
+      url: siteUrl,
+      siteName: "Astro Tharaka (තාරකා)",
       title,
       description,
-      images: [{ url: ogImage }],
+      images: [
+        {
+          url: ogImage,
+          width: 512,
+          height: 512,
+          alt: "Astro Tharaka — Find your destiny | ඔබේ ඉරණම සොයන්න",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+      images: [ogImage],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true },
+    },
+    alternates: {
+      canonical: siteUrl,
+      languages: {
+        "en-LK": siteUrl,
+        "si-LK": siteUrl,
+      },
     },
     verification: settings?.seo.googleSearchConsoleCode
       ? { google: settings.seo.googleSearchConsoleCode }
@@ -120,7 +173,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const gaId = settings?.seo.googleAnalyticsId?.trim();
 
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html lang="en-LK" data-theme="dark" suppressHydrationWarning>
       <body
         className={`${cinzel.variable} ${poppins.variable} ${notoSinhala.variable} ${abhayaLibre.variable} ${notoSerifSinhala.variable} antialiased`}
       >
