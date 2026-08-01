@@ -6,24 +6,22 @@
 
 ---
 
-## Architecture
+## Architecture (recommended on Contabo / existing host nginx)
 
 ```
 Internet
    │
    ▼
-Nginx :80/:443  (SSL termination)
-   ├─ https://astrotharaka.com      → web (Next.js :3001)
-   ├─ https://www.astrotharaka.com  → 301 → apex
-   └─ https://api.astrotharaka.com  → api (NestJS :3000)
-                                          ├─ postgres
-                                          ├─ redis
-                                          ├─ minio
-                                          ├─ worker (BullMQ)
-                                          └─ astrology-engine :8001
+Host nginx :80/:443  (SSL)     ← already on the VPS
+   ├─ https://astrotharaka.com      → 127.0.0.1:3001 (Docker web)
+   ├─ https://api.astrotharaka.com  → 127.0.0.1:3000 (Docker api)
+   └─ other app                     → :8080 (unchanged)
+
+Docker (no public 80/443):
+   web :3001, api :3000, postgres, redis, minio, worker, astrology-engine
 ```
 
-All app ports stay **internal**. Only Nginx exposes 80/443.
+Keep **host nginx** for Taraka on the main domain. Do **not** start Docker nginx (it conflicts with port 80).
 
 ---
 

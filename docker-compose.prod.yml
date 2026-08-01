@@ -102,6 +102,9 @@ services:
       REPORTS_DIR: /app/apps/api/uploads/reports
       NOTIFICATIONS_DIR: /app/apps/api/uploads/notifications
       BANK_SLIPS_DIR: /app/apps/api/uploads/bank-slips
+    # Host nginx proxies to these (keep localhost-only)
+    ports:
+      - "127.0.0.1:3000:3000"
     volumes:
       - api_uploads:/app/apps/api/uploads
       - report_uploads:/app/apps/api/uploads/reports
@@ -159,9 +162,15 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3001"
+    # Host nginx proxies to these (keep localhost-only)
+    ports:
+      - "127.0.0.1:3001:3001"
     networks: [internal]
 
+  # Optional: only if you are NOT using host nginx on :80/:443
+  # docker compose ... --profile docker-nginx up -d
   nginx:
+    profiles: ["docker-nginx"]
     image: nginx:1.27-alpine
     restart: unless-stopped
     depends_on:
@@ -179,6 +188,7 @@ services:
     networks: [internal, edge]
 
   certbot:
+    profiles: ["docker-nginx"]
     image: certbot/certbot:latest
     volumes:
       - certbot_www:/var/www/certbot
