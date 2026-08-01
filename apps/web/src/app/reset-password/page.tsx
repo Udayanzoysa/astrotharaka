@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import { ApiError, apiRequest } from "@/lib/api";
 import { useUi } from "@/components/providers/ui-provider";
 import { Button } from "@/components/ui/button";
@@ -13,28 +13,30 @@ function ResetPasswordInner() {
   const { t } = useUi();
   const router = useRouter();
   const search = useSearchParams();
-  const initialEmail = search.get("email") ?? "";
-  const [devHint] = useState(search.get("devCode") ?? "");
+  const email = search.get("email") ?? "";
+  const code = search.get("code") ?? "";
+  const hasValidLink = useMemo(() => Boolean(email && code), [email, code]);
   const [error, setError] = useState("");
-  const [info, setInfo] = useState(
-    search.get("devCode") ? `Dev code: ${search.get("devCode")}` : "",
-  );
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!hasValidLink) return;
     setError("");
+    setInfo("");
     setLoading(true);
     const form = new FormData(e.currentTarget);
     try {
-      await apiRequest("/auth/reset-password", {
+      const result = await apiRequest<{ message: string }>("/auth/reset-password", {
         body: {
-          email: String(form.get("email") ?? ""),
-          code: String(form.get("code") ?? ""),
+          email,
+          code,
           newPassword: String(form.get("newPassword") ?? ""),
         },
       });
-      router.push("/login");
+      setInfo(result.message);
+      setTimeout(() => router.push("/login"), 1500);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Reset failed");
     } finally {
@@ -42,28 +44,38 @@ function ResetPasswordInner() {
     }
   }
 
+  if (!hasValidLink) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-10 md:py-16">
+        <Card className="fade-up">
+          <h1 className="font-heading text-2xl text-ink">{t("resetPassword")}</h1>
+          <p className="mt-2 text-sm text-muted">{t("resetPasswordLinkInvalid")}</p>
+          <div className="mt-6">
+            <Link href="/forgot-password">
+              <Button fullWidth>{t("sendResetLink")}</Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-lg px-4 py-10 md:py-16">
       <Card className="fade-up">
         <h1 className="font-heading text-2xl text-ink">{t("resetPassword")}</h1>
         <p className="mt-2 text-sm text-muted">{t("resetPasswordHint")}</p>
+        <p className="mt-2 text-xs text-muted">{email}</p>
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-          <Field label={t("email")} name="email" type="email" required defaultValue={initialEmail} />
-          <Field
-            label={t("otpCode")}
-            name="code"
-            required
-            minLength={4}
-            defaultValue={devHint}
-          />
           <Field
             label={t("newPassword")}
             name="newPassword"
             type="password"
             required
             minLength={8}
+            autoComplete="new-password"
           />
-          {info ? <p className="text-sm text-accent">{info}</p> : null}
+          {info ? <p className="text-sm text-ink">{info}</p> : null}
           {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
           <Button type="submit" fullWidth disabled={loading}>
             {loading ? t("saving") : t("resetPassword")}

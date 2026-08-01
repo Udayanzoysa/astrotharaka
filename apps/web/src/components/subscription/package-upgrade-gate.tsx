@@ -117,9 +117,9 @@ export function PackageUpgradeGate({
       });
       const q = new URLSearchParams({
         email,
+        registered: "1",
         next: `/checkout/subscription?packageId=${selected.id}`,
       });
-      if (result.devCode) q.set("devCode", result.devCode);
       router.push(`/verify-email?${q.toString()}`);
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_ALREADY_REGISTERED") {

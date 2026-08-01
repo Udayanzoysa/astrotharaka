@@ -2,42 +2,54 @@
 
 ## Last Updated
 
-2026-07-22 04:15 (UTC+5:30)
+2026-07-31 (UTC+5:30)
 
 ## Current Phase
 
-Phase 12 — Google + Facebook OAuth
+Phase 14 — Go-live readiness (production hardening)
 
 ## Currently Working On
 
-- Phase 12 complete in code (needs Google/Facebook app credentials to fully smoke)
+- Deployment configuration + manual QA smoke tests before DNS cutover
 
-## Completed Recently
+## Completed Recently (Phase 14)
 
-- Continue with Google / Facebook on login + register
-- `OAuthAccount` model + nullable `passwordHash`
-- OAuth callbacks → JWT session via `/auth/callback`
-- ADR-015
+- Removed all `devCode` from auth API + verify-email/register UI
+- Password reset email link flow (Phase 13)
+- Subscription dual-payment + admin approve flow (Phase 13)
+- PayHere subscription sandbox-complete gated (matches orders)
+- Production config validation on API startup
+- SMTP file fallback disabled in production
+- Gemini local fallback disabled in production (baby names, porondam)
+- Go-live wiki: `docs/wiki/go-live-readiness.md`
 
 ## In Progress
 
-- None
+- Manual QA smoke test checklist (see go-live wiki)
 
-## Pending
+## Pending (post-launch)
 
-- North-Indian diamond kundali variant
-- WhatsApp approved templates
-- Fill `GOOGLE_*` / `FACEBOOK_*` env for live social login
+- Google / Facebook OAuth live credentials
+- Finance email on new `PAYMENT_UNDER_REVIEW`
+- SI/TA i18n for new strings
+- Admin orders: user mobile column
 
 ## Blocked
 
-- None
+- None (launch blocked only on deployment env + QA sign-off)
 
 ## Known Issues
 
-- Without OAuth env vars, social buttons redirect to login with “not configured”
+- PayHere localhost: use sandbox-complete only in dev with `NEXT_PUBLIC_ALLOW_DEV_PAYMENTS=true`
 - Prisma generate on Windows needs API/worker stopped (DLL lock)
 
 ## Next Recommended Task
 
-- Create Google Cloud OAuth client + Facebook Login app; set callback URLs; smoke social signup
+1. Set production env vars (see `docs/wiki/go-live-readiness.md`)
+2. Run QA smoke tests checklist
+3. Deploy API + worker + web + engine
+
+## Wiki
+
+- [Go-live readiness](../wiki/go-live-readiness.md)
+- [Recent updates & roadmap](../wiki/recent-updates-and-roadmap.md)

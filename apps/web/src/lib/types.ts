@@ -37,7 +37,6 @@ export type RegisterPendingResponse = {
   email: string;
   message: string;
   user: User;
-  devCode?: string;
 };
 
 export type BirthProfile = {
@@ -190,6 +189,41 @@ export type UserSubscription = {
   status: "ACTIVE" | "EXPIRED" | "CANCELLED";
   paymentRef: string | null;
   monthCycle: string | null;
+};
+
+export type SubscriptionCheckout = {
+  id: string;
+  checkoutNumber: string;
+  userId: string;
+  packageId: string;
+  packageCode: string;
+  packageNameEn: string;
+  priceLkr: number;
+  currency: string;
+  status:
+    | "AWAITING_PAYMENT"
+    | "PAYMENT_UNDER_REVIEW"
+    | "PAID"
+    | "ACTIVATED"
+    | "CANCELLED";
+  userSubscriptionId: string | null;
+  createdAt: string;
+  paidAt: string | null;
+  activatedAt: string | null;
+  userEmail?: string | null;
+  userName?: string | null;
+  userMobile?: string | null;
+  userWhatsapp?: string | null;
+  payments?: Array<{
+    id: string;
+    method: string;
+    status: string;
+    amount: number;
+    providerRef: string | null;
+    hasBankSlip: boolean;
+    bankAccountId: string | null;
+    bankAccount?: { bankName: string; accountNumber: string } | null;
+  }>;
 };
 
 export function productName(product: Pick<Product, "nameEn" | "nameSi" | "nameTa">, lang: Language) {

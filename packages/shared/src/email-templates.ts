@@ -96,14 +96,17 @@ export function buildPasswordReset(input: {
   fullName?: string;
   code: string;
   expiresMinutes: number;
+  resetLink?: string;
 }): BuiltEmail {
   const name = input.fullName?.trim() || 'there';
-  const subject = 'Taraka — password reset code';
+  const subject = 'Taraka — reset your password';
   const text = [
     `Hello ${name},`,
     '',
-    `Your password reset code is: ${input.code}`,
-    `This code expires in ${input.expiresMinutes} minutes.`,
+    input.resetLink
+      ? `Reset your password using this link:\n${input.resetLink}`
+      : `Your password reset code is: ${input.code}`,
+    `This link expires in ${input.expiresMinutes} minutes.`,
     '',
     'If you did not request a reset, ignore this email.',
     '',
@@ -113,10 +116,20 @@ export function buildPasswordReset(input: {
     subject,
     `
     <p style="margin:0 0 12px;font-size:16px;">Hello ${escapeHtml(name)},</p>
-    <p style="margin:0 0 16px;color:#c8cdd8;">Use this code to reset your Taraka password.</p>
-    <div style="display:inline-block;padding:14px 22px;border-radius:12px;background:#1a2234;border:1px solid #d4af37;font-size:28px;letter-spacing:0.28em;font-weight:700;color:#d4af37;">
-      ${escapeHtml(input.code)}
-    </div>
+    <p style="margin:0 0 16px;color:#c8cdd8;">${
+      input.resetLink
+        ? 'Click the button below to choose a new password for your Taraka account.'
+        : 'Use this code to reset your Taraka password.'
+    }</p>
+    ${
+      input.resetLink
+        ? `<a href="${escapeHtml(
+            input.resetLink,
+          )}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#d4af37;color:#0b0f19;text-decoration:none;font-weight:700;margin-bottom:16px;">Reset password</a>`
+        : `<div style="display:inline-block;padding:14px 22px;border-radius:12px;background:#1a2234;border:1px solid #d4af37;font-size:28px;letter-spacing:0.28em;font-weight:700;color:#d4af37;">${escapeHtml(
+            input.code,
+          )}</div>`
+    }
     <p style="margin:16px 0 0;font-size:13px;color:#8a93a7;">Expires in ${input.expiresMinutes} minutes.</p>
   `,
   );

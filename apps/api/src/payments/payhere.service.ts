@@ -47,6 +47,8 @@ export class PayHereService {
     currency: string;
     itemName: string;
     customer?: { fullName?: string; email?: string; phone?: string };
+    returnPath?: string;
+    cancelPath?: string;
   }): PayHereCheckoutFields {
     const merchantId = this.merchantId();
     const secret = this.merchantSecret();
@@ -69,11 +71,14 @@ export class PayHereService {
       .get<string>('PAYHERE_CANCEL_URL', 'http://localhost:3001/orders')
       .replace(/\/$/, '');
 
+    const returnUrl = input.returnPath ?? `${returnBase}/${input.orderId}?payhere=return`;
+    const cancelUrl = input.cancelPath ?? `${cancelBase}/${input.orderId}?payhere=cancel`;
+
     return {
       actionUrl: this.actionUrl(),
       merchant_id: merchantId,
-      return_url: `${returnBase}/${input.orderId}?payhere=return`,
-      cancel_url: `${cancelBase}/${input.orderId}?payhere=cancel`,
+      return_url: returnUrl,
+      cancel_url: cancelUrl,
       notify_url: this.config.get<string>(
         'PAYHERE_NOTIFY_URL',
         'http://localhost:3000/api/v1/webhooks/payhere',

@@ -59,7 +59,7 @@ export class AuthService {
       include: { profile: true },
     });
 
-    const issued = await this.challenges.issue({
+    await this.challenges.issue({
       email,
       userId: user.id,
       purpose: AuthChallengePurpose.EMAIL_VERIFY,
@@ -69,9 +69,8 @@ export class AuthService {
     return {
       requiresVerification: true as const,
       email,
-      message: 'Check your email for a verification code.',
+      message: 'Check your email for a verification link.',
       user: this.sanitizeUser(user),
-      ...(this.challenges.returnDevCode() ? { devCode: issued.code } : {}),
     };
   }
 
@@ -184,7 +183,7 @@ export class AuthService {
       return generic;
     }
 
-    const issued = await this.challenges.issue({
+    await this.challenges.issue({
       email,
       userId: user.id,
       purpose: AuthChallengePurpose.EMAIL_VERIFY,
@@ -193,7 +192,7 @@ export class AuthService {
 
     return {
       ...generic,
-      ...(this.challenges.returnDevCode() ? { devCode: issued.code } : {}),
+      message: 'If the account needs verification, a new verification link was sent.',
     };
   }
 
@@ -201,7 +200,7 @@ export class AuthService {
     const email = dto.email.toLowerCase();
     const generic = {
       ok: true as const,
-      message: 'If an account exists, a reset code was sent.',
+      message: 'If an account exists, a password reset link was sent to your email.',
     };
 
     const user = await this.prisma.user.findUnique({
@@ -212,17 +211,14 @@ export class AuthService {
       return generic;
     }
 
-    const issued = await this.challenges.issue({
+    await this.challenges.issue({
       email,
       userId: user.id,
       purpose: AuthChallengePurpose.PASSWORD_RESET,
       fullName: user.profile?.fullName ?? undefined,
     });
 
-    return {
-      ...generic,
-      ...(this.challenges.returnDevCode() ? { devCode: issued.code } : {}),
-    };
+    return generic;
   }
 
   async resetPassword(dto: ResetPasswordDto) {

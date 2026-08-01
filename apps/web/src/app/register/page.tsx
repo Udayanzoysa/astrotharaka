@@ -43,8 +43,7 @@ export default function RegisterPage() {
       if (result.user.profile?.preferredLanguage) {
         setLanguage(result.user.profile.preferredLanguage as Language);
       }
-      const q = new URLSearchParams({ email });
-      if (result.devCode) q.set("devCode", result.devCode);
+      const q = new URLSearchParams({ email, registered: "1" });
       router.push(`/verify-email?${q.toString()}`);
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_ALREADY_REGISTERED") {

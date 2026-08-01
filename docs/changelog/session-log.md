@@ -1,5 +1,54 @@
 # Session Log
 
+## 2026-07-31 – Phase 14 Go-live readiness
+
+### User Request
+
+Plan next phase, remove dev stuff, make production-ready, QA test, maintain wiki.
+
+### Work Completed
+
+- Removed devCode from auth API + verify-email/register/upgrade-gate UI
+- Production config validation (`validateProductionConfig`) on API boot
+- PayHere subscription sandbox-complete gated; sandbox paths only in sandbox mode
+- SMTP file fallback disabled in production
+- Gemini local fallback disabled in production
+- Wiki: `docs/wiki/go-live-readiness.md`
+- Updated current-status, next-steps, README, authentication-api
+
+### Next Session Should
+
+1. Set production env and run go-live QA checklist
+2. Deploy and smoke test on staging domain
+
+---
+
+## 2026-07-31 – Phase 13 Subscription payments + password reset links
+
+### User Requests
+
+- Remove dev code from password reset; send email reset link instead of OTP field
+- Where admins view uploads; how to approve subscription payments; show user mobile
+- Wiki doc with what was updated and next plan
+
+### Work Completed
+
+- Password reset email link flow (no dev code on forgot/reset pages)
+- Subscription dual-payment system (PayHere + bank slip + admin approve)
+- Admin subscription payments: user mobile/WhatsApp, Review link
+- Shop API circular dependency fix
+- Wiki: `docs/wiki/recent-updates-and-roadmap.md`
+- Updated `current-status.md`, `next-steps.md`, `admin.md`, `authentication.md`
+
+### Next Session Should
+
+1. Smoke subscription bank transfer approve flow end-to-end
+2. Remove dev code from `/verify-email`
+3. Add Google/Facebook OAuth credentials
+4. SI/TA i18n for new strings
+
+---
+
 ## 2026-07-22 – Phase 12 Google/Facebook OAuth
 
 ### User Request

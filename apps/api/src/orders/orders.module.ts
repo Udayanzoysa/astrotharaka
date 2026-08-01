@@ -11,7 +11,7 @@ import { BankAccountsModule } from '../bank-accounts/bank-accounts.module';
   imports: [
     ProductsModule,
     PromotionsModule,
-    SubscriptionsModule,
+    forwardRef(() => SubscriptionsModule),
     BankAccountsModule,
     forwardRef(() => PaymentsModule),
   ],

@@ -11,11 +11,20 @@ Permanent project knowledge base for humans and AI assistants.
 3. Read [`handover/next-steps.md`](handover/next-steps.md)
 4. Read SRS: [`AstroAI_Lanka_SRS.md`](AstroAI_Lanka_SRS.md)
 
-## Current Reality (2026-07-21)
+## Current Reality (2026-07-31)
 
-Phase 4 complete in code (promotions + admin). Local: API `:3000`, web `:3001`.
+Phase 14 — go-live readiness. Local: API `:3005` (or `:3000`), web `:3001`.
+
+**Launch checklist:** [Go-live readiness](wiki/go-live-readiness.md)  
+**Latest updates:** [Recent updates & roadmap](wiki/recent-updates-and-roadmap.md)
 
 ## Wiki Index
+
+### Session wiki
+
+- [**Go-live readiness**](wiki/go-live-readiness.md) — Phase 14 checklist + QA
+- [Recent updates & roadmap](wiki/recent-updates-and-roadmap.md)
+- [Subscription dual-payment guide](subscription-dual-payment-implementation.md)
 
 ### Handover
 

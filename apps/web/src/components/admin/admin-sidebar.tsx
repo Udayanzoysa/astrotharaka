@@ -45,6 +45,12 @@ const links: NavLink[] = [
     roles: ["CONTENT", "SUPER_ADMIN"],
   },
   {
+    href: "/admin/subscription-payments",
+    label: "Subscription payments",
+    match: (p) => p.startsWith("/admin/subscription-payments"),
+    roles: ["CONTENT", "SUPER_ADMIN", "FINANCE"],
+  },
+  {
     href: "/admin/promotions",
     label: "Promotions",
     match: (p) => p.startsWith("/admin/promotions"),

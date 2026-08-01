@@ -2,21 +2,18 @@
 
 ## POST `/auth/register`
 
-Creates a customer with `PENDING_VERIFICATION` and issues an email OTP.
+Creates a customer with `PENDING_VERIFICATION` and sends a verification email (link + code).
 
-**Response (Phase 8):**
+**Response:**
 
 ```json
 {
   "requiresVerification": true,
   "email": "user@example.com",
-  "message": "Check your email for a verification code.",
-  "user": { "...": "..." },
-  "devCode": "123456"
+  "message": "Check your email for a verification link.",
+  "user": { "...": "..." }
 }
 ```
-
-`devCode` is included only when `OTP_RETURN_IN_RESPONSE=true` or non-production.
 
 **Errors:** `EMAIL_ALREADY_REGISTERED`, `VALIDATION_FAILED`
 
@@ -28,19 +25,23 @@ Creates a customer with `PENDING_VERIFICATION` and issues an email OTP.
 
 Body: `{ "email", "code" }` → `{ accessToken, user }`
 
+Code from email link query params or manual entry.
+
 **Errors:** `INVALID_OTP`, `OTP_EXPIRED`
 
 ## POST `/auth/resend-otp`
 
-Body: `{ "email" }` — always generic success (anti-enumeration). May include `devCode` in development.
+Body: `{ "email" }` — always generic success (anti-enumeration). Sends new verification link.
 
 ## POST `/auth/forgot-password`
 
-Body: `{ "email" }` — always generic success. Issues `PASSWORD_RESET` OTP when account exists.
+Body: `{ "email" }` — always generic success. Sends password reset link when account exists.
 
 ## POST `/auth/reset-password`
 
 Body: `{ "email", "code", "newPassword" }` → `{ ok: true }`
+
+Code from reset email link.
 
 **Errors:** `INVALID_OTP`, `OTP_EXPIRED`
 
@@ -54,6 +55,9 @@ Starts OAuth. Callbacks redirect to `{WEB_APP_URL}/auth/callback?accessToken=…
 
 If credentials are missing, redirects to `/login?error=google_not_configured` (or facebook).
 
-## Local OTP delivery
+## Email delivery
 
-Codes are written to `NOTIFICATIONS_DIR/otp/` (default `uploads/notifications/otp`).
+Production requires SMTP. In local dev without SMTP, emails may be written to `NOTIFICATIONS_DIR/email/`.
+
+Verification link format: `{WEB_APP_URL}/verify-email?email=...&code=...`  
+Reset link format: `{WEB_APP_URL}/reset-password?email=...&code=...`

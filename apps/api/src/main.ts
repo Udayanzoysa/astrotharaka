@@ -1,12 +1,16 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { validateProductionConfig } from './common/production-config';
 
 async function bootstrap(): Promise<void> {
+  validateProductionConfig();
+
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
+  const logger = new Logger('Bootstrap');
 
   const prefix = config.get<string>('API_PREFIX', 'api/v1');
   app.setGlobalPrefix(prefix);
@@ -26,8 +30,7 @@ async function bootstrap(): Promise<void> {
 
   const port = config.get<number>('API_PORT', 3000);
   await app.listen(port);
-  // eslint-disable-next-line no-console
-  console.log(`API listening on http://localhost:${port}/${prefix}`);
+  logger.log(`API listening on port ${port} (prefix /${prefix})`);
 }
 
 void bootstrap();

@@ -8,8 +8,17 @@ Phase 12 — email/password + OTP + Google/Facebook OAuth
 
 1. **Register** → `PENDING_VERIFICATION` → OTP → **Verify** → `ACTIVE` + JWT
 2. **Login** blocked until verified (`EMAIL_NOT_VERIFIED`)
-3. **Forgot password** → OTP → **Reset password**
+3. **Forgot password** → email with reset link → **Reset password** (new password only)
 4. **Google / Facebook** → OAuth redirect → upsert/link user → `/auth/callback?accessToken=` → dashboard
+
+### Password reset (link flow)
+
+1. `POST /auth/forgot-password` with `{ email }`
+2. Email contains link: `{WEB_APP_URL}/reset-password?email=...&code=...`
+3. User opens link → enters new password only
+4. `POST /auth/reset-password` with `{ email, code, newPassword }`
+
+No dev code is returned from forgot-password. Local OTP files may still be written under `uploads/notifications/otp` when SMTP is not configured.
 
 ## Models
 

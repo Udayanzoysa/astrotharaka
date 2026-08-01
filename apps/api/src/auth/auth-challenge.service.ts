@@ -28,14 +28,6 @@ export class AuthChallengeService {
     return Number(this.config.get('OTP_TTL_MINUTES', 15));
   }
 
-  returnDevCode(): boolean {
-    // Never leak OTPs in production, even if misconfigured.
-    if ((this.config.get('NODE_ENV', 'development') ?? '').toLowerCase() === 'production') {
-      return false;
-    }
-    return this.config.get<string>('OTP_RETURN_IN_RESPONSE', '') === 'true';
-  }
-
   async issue(input: {
     email: string;
     userId?: string;
@@ -128,6 +120,8 @@ export class AuthChallengeService {
     fullName?: string;
   }): Promise<void> {
     let verificationLink: string | undefined;
+    let resetLink: string | undefined;
+    const webAppUrl = this.config.get<string>('WEB_APP_URL') || 'http://localhost:3001';
 
     if (input.purpose === AuthChallengePurpose.EMAIL_VERIFY) {
       const setting = await this.prisma.systemSetting.findUnique({
@@ -136,11 +130,16 @@ export class AuthChallengeService {
       const verificationMethod = setting?.value || 'EMAIL';
 
       if (verificationMethod === 'EMAIL') {
-        const webAppUrl = this.config.get<string>('WEB_APP_URL') || 'http://localhost:3001';
         verificationLink = `${webAppUrl}/verify-email?email=${encodeURIComponent(
           input.email,
         )}&code=${input.code}`;
       }
+    }
+
+    if (input.purpose === AuthChallengePurpose.PASSWORD_RESET) {
+      resetLink = `${webAppUrl}/reset-password?email=${encodeURIComponent(
+        input.email,
+      )}&code=${input.code}`;
     }
 
     const built =
@@ -155,6 +154,7 @@ export class AuthChallengeService {
             fullName: input.fullName,
             code: input.code,
             expiresMinutes: this.ttlMinutes(),
+            resetLink,
           });
 
     const result = await this.mail.send({

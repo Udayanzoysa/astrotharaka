@@ -6,6 +6,7 @@ import { AdminOrdersController } from './admin-orders.controller';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminGuestReportsController } from './admin-guest-reports.controller';
 import { AdminPackagesController } from './admin-packages.controller';
+import { AdminSubscriptionCheckoutsController } from './admin-subscription-checkouts.controller';
 import { ProductsModule } from '../products/products.module';
 import { OrdersModule } from '../orders/orders.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
@@ -22,6 +23,7 @@ import { RolesGuard } from '../auth/roles.guard';
     AdminUsersController,
     AdminGuestReportsController,
     AdminPackagesController,
+    AdminSubscriptionCheckoutsController,
   ],
   providers: [RolesGuard],
 })

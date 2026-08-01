@@ -15,7 +15,7 @@ import { basename, extname, join } from 'path';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/errors/app.exception';
-import { assertDevPaymentsAllowed } from '../common/runtime-flags';
+import { assertDevPaymentsAllowed, allowDevPayments } from '../common/runtime-flags';
 import { resolveReportFilePath } from '../common/resolve-report-file';
 import { ProductsService } from '../products/products.service';
 import { QueueService } from '../queue/queue.service';
@@ -664,7 +664,9 @@ export class OrdersService {
           message:
             'PayHere credentials missing. Set PAYHERE_MERCHANT_ID and PAYHERE_MERCHANT_SECRET.',
           paymentId,
-          confirmPath: `/api/v1/orders/${order.id}/payments/confirm`,
+          ...(allowDevPayments()
+            ? { confirmPath: `/api/v1/orders/${order.id}/payments/confirm` }
+            : {}),
         };
       }
 
@@ -690,7 +692,9 @@ export class OrdersService {
         type: 'payhere' as const,
         paymentId,
         mode: this.payHere.mode(),
-        sandboxCompletePath: '/api/v1/public/payments/payhere/sandbox-complete',
+        ...(this.payHere.mode() === 'sandbox'
+          ? { sandboxCompletePath: '/api/v1/public/payments/payhere/sandbox-complete' }
+          : {}),
         ...fields,
       };
     }

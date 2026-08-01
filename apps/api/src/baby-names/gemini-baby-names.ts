@@ -141,6 +141,9 @@ export async function generateBabyNamesWithGemini(input: {
   const models = [preferred, ...MODEL_FALLBACKS.filter((m) => m !== preferred)];
 
   if (!apiKey) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('GEMINI_API_KEY is required for baby names in production');
+    }
     return {
       names: localFallback(input.firstLetter, input.secondLetter, input.gender, styles),
       aiModel: 'local-fallback:no-key',
@@ -227,6 +230,9 @@ Example shape:
       lastError instanceof Error ? lastError.message : 'unknown'
     }`,
   );
+  if (process.env.NODE_ENV === 'production') {
+    throw lastError instanceof Error ? lastError : new Error('Gemini baby names failed');
+  }
   return {
     names: localFallback(input.firstLetter, input.secondLetter, input.gender, styles),
     aiModel: `local-fallback:${lastError instanceof Error ? lastError.message : 'error'}`,

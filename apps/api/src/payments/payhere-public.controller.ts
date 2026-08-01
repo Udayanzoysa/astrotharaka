@@ -11,11 +11,21 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/types/jwt-payload';
 import { OrdersService } from '../orders/orders.service';
+import { SubscriptionCheckoutsService } from '../subscriptions/subscription-checkouts.service';
 import { PayHereService } from './payhere.service';
 
 class SandboxCompleteDto {
   @IsUUID()
   orderId!: string;
+
+  @IsOptional()
+  @IsString()
+  paymentId?: string;
+}
+
+class SubscriptionSandboxCompleteDto {
+  @IsUUID()
+  checkoutId!: string;
 
   @IsOptional()
   @IsString()
@@ -31,6 +41,7 @@ export class PayHerePublicController {
   constructor(
     private readonly payHere: PayHereService,
     private readonly orders: OrdersService,
+    private readonly subscriptionCheckouts: SubscriptionCheckoutsService,
   ) {}
 
   @Post('sandbox-complete')
@@ -48,6 +59,28 @@ export class PayHerePublicController {
 
     return this.orders.confirmPayHereWebhook({
       orderId: dto.orderId,
+      paymentId: dto.paymentId ?? `sandbox-${Date.now()}`,
+    });
+  }
+
+  @Post('subscription-sandbox-complete')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(200)
+  async subscriptionSandboxComplete(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: SubscriptionSandboxCompleteDto,
+  ) {
+    if (this.payHere.mode() === 'live') {
+      throw new ForbiddenException('sandbox-complete is disabled in live mode');
+    }
+    if (!this.payHere.isConfigured()) {
+      throw new ForbiddenException('PayHere is not configured');
+    }
+
+    await this.subscriptionCheckouts.getCheckout(user.sub, dto.checkoutId);
+
+    return this.subscriptionCheckouts.confirmPayHereWebhook({
+      checkoutId: dto.checkoutId,
       paymentId: dto.paymentId ?? `sandbox-${Date.now()}`,
     });
   }

@@ -4,6 +4,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { createTransport, type Transporter } from 'nodemailer';
 import type { BuiltEmail } from '@astro/shared';
+import { isProductionRuntime } from '../common/runtime-flags';
 import { SmtpConfigService } from './smtp-config.service';
 
 export type SendMailInput = BuiltEmail & {
@@ -48,11 +49,17 @@ export class MailService {
         return { ok: true, provider: 'smtp', detail: String(info.messageId ?? '') };
       } catch (error) {
         this.logger.warn(
-          `SMTP failed, writing file fallback: ${
-            error instanceof Error ? error.message : 'unknown'
-          }`,
+          `SMTP failed: ${error instanceof Error ? error.message : 'unknown'}`,
         );
+        if (isProductionRuntime()) {
+          return { ok: false, provider: 'smtp', detail: 'SMTP delivery failed' };
+        }
       }
+    }
+
+    if (isProductionRuntime()) {
+      this.logger.error(`SMTP not configured — cannot send to ${input.to}`);
+      return { ok: false, provider: 'none', detail: 'SMTP not configured' };
     }
 
     return this.writeFileFallback(input);

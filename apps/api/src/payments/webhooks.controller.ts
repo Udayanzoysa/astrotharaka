@@ -1,6 +1,8 @@
 import { Body, Controller, HttpCode, Logger, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
+import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
+import { SubscriptionCheckoutsService } from '../subscriptions/subscription-checkouts.service';
 import { PayHereService } from './payhere.service';
 
 @Controller('webhooks')
@@ -10,6 +12,8 @@ export class WebhooksController {
   constructor(
     private readonly payHere: PayHereService,
     private readonly orders: OrdersService,
+    private readonly subscriptionCheckouts: SubscriptionCheckoutsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -27,14 +31,30 @@ export class WebhooksController {
       return { status: 'invalid_signature' };
     }
 
-    // status_code 2 = success
-    if (String(payload.status_code) === '2') {
+    if (String(payload.status_code) !== '2') {
+      return { status: 'ok' };
+    }
+
+    const checkoutId = payload.order_id;
+    const [order, subCheckout] = await Promise.all([
+      this.prisma.order.findUnique({ where: { id: checkoutId }, select: { id: true } }),
+      this.prisma.subscriptionCheckout.findUnique({ where: { id: checkoutId }, select: { id: true } }),
+    ]);
+
+    if (order) {
       await this.orders.confirmPayHereWebhook({
-        orderId: payload.order_id,
+        orderId: checkoutId,
         paymentId: payload.payment_id,
         amount: payload.payhere_amount,
         currency: payload.payhere_currency,
       });
+    } else if (subCheckout) {
+      await this.subscriptionCheckouts.confirmPayHereWebhook({
+        checkoutId,
+        paymentId: payload.payment_id,
+      });
+    } else {
+      this.logger.warn(`PayHere notify: unknown checkout id ${checkoutId}`);
     }
 
     return { status: 'ok' };

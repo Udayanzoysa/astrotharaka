@@ -17,15 +17,14 @@ function VerifyEmailInner() {
   const router = useRouter();
   const search = useSearchParams();
   const initialEmail = search.get("email") ?? "";
-  const [devHint] = useState(search.get("devCode") ?? "");
+  const linkCode = search.get("code") ?? "";
   const [error, setError] = useState("");
   const [info, setInfo] = useState(
-    search.get("devCode") ? `Dev code: ${search.get("devCode")}` : "",
+    search.get("registered") === "1" ? t("verifyEmailCheckInbox") : "",
   );
   const [loading, setLoading] = useState(false);
   const [autoVerifying, setAutoVerifying] = useState(false);
 
-  // Auto-verification from link token
   useEffect(() => {
     const code = search.get("code");
     const email = search.get("email");
@@ -77,13 +76,25 @@ function VerifyEmailInner() {
     if (!email) return;
     setError("");
     try {
-      const result = await apiRequest<{ message: string; devCode?: string }>("/auth/resend-otp", {
+      const result = await apiRequest<{ message: string }>("/auth/resend-otp", {
         body: { email },
       });
-      setInfo(result.devCode ? `Dev code: ${result.devCode}` : result.message);
+      setInfo(result.message);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Resend failed");
     }
+  }
+
+  if (autoVerifying || (linkCode && initialEmail)) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-10 md:py-16">
+        <Card className="fade-up">
+          <h1 className="font-heading text-2xl text-ink">{t("verifyEmail")}</h1>
+          <p className="mt-4 text-sm text-muted">{loading ? t("saving") : t("verifyEmailHint")}</p>
+          {error ? <p className="mt-3 text-sm text-[var(--danger)]">{error}</p> : null}
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -91,6 +102,11 @@ function VerifyEmailInner() {
       <Card className="fade-up">
         <h1 className="font-heading text-2xl text-ink">{t("verifyEmail")}</h1>
         <p className="mt-2 text-sm text-muted">{t("verifyEmailHint")}</p>
+        {info ? (
+          <p className="mt-4 rounded-xl border border-line bg-[var(--input-bg)] px-4 py-3 text-sm text-ink">
+            {info}
+          </p>
+        ) : null}
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <Field
             label={t("email")}
@@ -105,10 +121,9 @@ function VerifyEmailInner() {
             name="code"
             required
             minLength={4}
-            defaultValue={search.get("code") ?? devHint}
+            defaultValue={linkCode || undefined}
             placeholder="6-digit code"
           />
-          {info ? <p className="text-sm text-accent">{info}</p> : null}
           {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
           <Button type="submit" fullWidth disabled={loading}>
             {loading ? t("saving") : t("verifyEmail")}

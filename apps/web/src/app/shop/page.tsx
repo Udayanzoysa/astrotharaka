@@ -24,6 +24,8 @@ export default function ShopPage() {
   const [mine, setMine] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState("");
+
   useEffect(() => {
     void (async () => {
       try {
@@ -39,6 +41,8 @@ export default function ShopPage() {
         } else {
           setMine(null);
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not load shop");
       } finally {
         setLoading(false);
       }
@@ -62,6 +66,12 @@ export default function ShopPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
       <h1 className="font-heading fade-up text-3xl text-ink">{t("availableServices")}</h1>
       <p className="mt-2 max-w-2xl text-muted">{t("disclaimer")}</p>
+
+      {error ? (
+        <p className="mt-4 rounded-xl border border-[var(--danger)]/40 bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--danger)]">
+          {error}
+        </p>
+      ) : null}
 
       {hasActive ? (
         <Card className="fade-up mt-6 border-accent/30">

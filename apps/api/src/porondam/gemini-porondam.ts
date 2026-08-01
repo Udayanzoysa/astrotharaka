@@ -131,6 +131,9 @@ export async function generatePorondamWithGemini(
   const models = [preferred, ...MODEL_FALLBACKS.filter((m) => m !== preferred)];
 
   if (!apiKey) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('GEMINI_API_KEY is required for porondam in production');
+    }
     return { report: localFallback(groom, bride), aiModel: 'local-fallback:no-key' };
   }
 
@@ -202,6 +205,9 @@ Example shape:
       lastError instanceof Error ? lastError.message : 'unknown'
     }`,
   );
+  if (process.env.NODE_ENV === 'production') {
+    throw lastError instanceof Error ? lastError : new Error('Gemini porondam failed');
+  }
   return {
     report: localFallback(groom, bride),
     aiModel: `local-fallback:${lastError instanceof Error ? lastError.message : 'error'}`,

@@ -1,7 +1,8 @@
 import type { ApiErrorBody } from "./types";
 import { getOrCreateGuestKey, rememberGuestKey } from "./guest-usage";
+import { getApiUrl } from "./env";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
+const API_URL = getApiUrl();
 
 export class ApiError extends Error {
   constructor(
@@ -38,11 +39,20 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     headers["X-Guest-Key"] = guestKey;
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    throw new ApiError(
+      0,
+      "NETWORK_ERROR",
+      `Cannot reach the API at ${API_URL}. Start the backend with pnpm dev:api.`,
+    );
+  }
 
   const returnedKey = response.headers.get("X-Guest-Key");
   if (returnedKey) rememberGuestKey(returnedKey);
