@@ -6,11 +6,13 @@ Primary doc: [`../wiki/go-live-readiness.md`](../wiki/go-live-readiness.md)
 
 ## Before launch (required)
 
-1. **Production env** — API + web build vars (HTTPS URLs, live PayHere, SMTP, Gemini, S3)
-2. **Database** — `prisma migrate deploy` on production DB
-3. **QA smoke tests** — auth, shop order, subscription, admin slip approval (checklist in go-live wiki)
-4. **SMTP test** — Admin → Settings → send test email
-5. **PayHere live** — notify URL points to `POST /api/v1/webhooks/payhere`
+1. **VPS + Docker deploy** — follow [`docs/wiki/server-deployment.md`](../wiki/server-deployment.md)
+2. **Namecheap DNS** — A records for `@`, `www`, `api` → server IP; SSL via `init-ssl.sh`
+3. **Production env** — copy `.env.production.example` → `.env.production` (HTTPS, live PayHere, SMTP, Gemini)
+4. **QA smoke tests** — auth, shop order, subscription, admin slip approval (go-live wiki)
+5. **SMTP test** — Admin → Settings → send test email
+6. **PayHere live** — notify URL = `https://api.astrotharaka.com/api/v1/webhooks/payhere`
+7. **First backup** — `./deploy/scripts/backup.sh` and copy archive off-server
 
 ## After launch
 

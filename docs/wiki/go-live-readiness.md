@@ -166,6 +166,7 @@ Run these before switching DNS:
 
 ## Related docs
 
+- [**Server deployment (Docker + Nginx + SSL + backup)**](./server-deployment.md)
 - [Recent updates & roadmap](./recent-updates-and-roadmap.md)
 - [Subscription dual-payment guide](../subscription-dual-payment-implementation.md)
 - [Environment variables](../development/environment-variables.md)

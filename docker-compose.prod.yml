@@ -1,0 +1,203 @@
+# Production stack for astrotharaka.com
+# Usage:
+#   cp .env.production.example .env.production
+#   # edit secrets
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+
+name: taraka-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-astro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-astroguruai}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-astro} -d ${POSTGRES_DB:-astroguruai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:?set S3_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:?set S3_SECRET_ACCESS_KEY}
+    volumes:
+      - minio_data:/data
+    networks: [internal]
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 $${S3_ACCESS_KEY_ID} $${S3_SECRET_ACCESS_KEY};
+      mc mb -p local/$${S3_BUCKET_REPORTS:-astro-reports} || true;
+      exit 0;
+      "
+    environment:
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_BUCKET_REPORTS: ${S3_BUCKET_REPORTS:-astro-reports}
+    networks: [internal]
+    restart: "no"
+
+  astrology-engine:
+    build:
+      context: ./services/astrology-engine
+    restart: unless-stopped
+    environment:
+      PORT: "8001"
+      TZ: Asia/Colombo
+    networks: [internal]
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      astrology-engine:
+        condition: service_started
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      API_PORT: "3000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-astro}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-astroguruai}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ASTROLOGY_ENGINE_URL: http://astrology-engine:8001
+      S3_ENDPOINT: http://minio:9000
+      S3_FORCE_PATH_STYLE: "true"
+      REPORTS_DIR: /app/apps/api/uploads/reports
+      NOTIFICATIONS_DIR: /app/apps/api/uploads/notifications
+      BANK_SLIPS_DIR: /app/apps/api/uploads/bank-slips
+    volumes:
+      - api_uploads:/app/apps/api/uploads
+      - report_uploads:/app/apps/api/uploads/reports
+    networks: [internal]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-astro}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-astroguruai}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ASTROLOGY_ENGINE_URL: http://astrology-engine:8001
+      S3_ENDPOINT: http://minio:9000
+      S3_FORCE_PATH_STYLE: "true"
+      REPORTS_DIR: /app/apps/worker/uploads/reports
+      NOTIFICATIONS_DIR: /app/apps/worker/uploads/notifications
+      PDF_ENGINE: ${PDF_ENGINE:-pdfkit}
+      WEB_APP_URL: ${WEB_APP_URL}
+    volumes:
+      - report_uploads:/app/apps/worker/uploads/reports
+      - worker_uploads:/app/apps/worker/uploads
+    networks: [internal]
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_ALLOW_DEV_PAYMENTS: "false"
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+    networks: [internal]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/nginx/snippets:/etc/nginx/snippets:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    networks: [internal, edge]
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+    networks: [internal]
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  api_uploads:
+  worker_uploads:
+  report_uploads:
+  certbot_www:
+  certbot_certs:
+
+networks:
+  internal:
+    driver: bridge
+  edge:
+    driver: bridge

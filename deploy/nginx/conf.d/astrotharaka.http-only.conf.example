@@ -1,0 +1,46 @@
+# Bootstrap config (HTTP only) — use until Let's Encrypt certs exist.
+# See deploy/scripts/init-ssl.sh
+
+upstream taraka_web {
+  server web:3001;
+}
+
+upstream taraka_api {
+  server api:3000;
+}
+
+server {
+  listen 80;
+  server_name astrotharaka.com www.astrotharaka.com;
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    proxy_pass http://taraka_web;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+server {
+  listen 80;
+  server_name api.astrotharaka.com;
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    proxy_pass http://taraka_api;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}

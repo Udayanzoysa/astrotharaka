@@ -11,7 +11,13 @@ coverage/
 # Environment Variables & Secrets
 .env
 .env.local
+.env.production
 !.env.example
+!.env.production.example
+
+# Deploy backups (contain DB dumps + secrets)
+deploy/backups/**
+!deploy/backups/.gitkeep
 
 # Logs
 *.log

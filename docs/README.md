@@ -22,6 +22,7 @@ Phase 14 — go-live readiness. Local: API `:3005` (or `:3000`), web `:3001`.
 
 ### Session wiki
 
+- [**Server deployment (Docker + Nginx + SSL)**](wiki/server-deployment.md) — astrotharaka.com / Namecheap / backup & migrate
 - [**Go-live readiness**](wiki/go-live-readiness.md) — Phase 14 checklist + QA
 - [Recent updates & roadmap](wiki/recent-updates-and-roadmap.md)
 - [Subscription dual-payment guide](subscription-dual-payment-implementation.md)
