@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import Script from "next/script";
 import {
   Abhaya_Libre,
   Cinzel,
@@ -19,6 +21,9 @@ import {
   DEFAULT_SITE_URL,
 } from "@/lib/seo-defaults";
 import "./globals.css";
+
+/** Required so per-request CSP nonces from middleware are applied to scripts. */
+export const dynamic = "force-dynamic";
 
 const cinzel = Cinzel({
   variable: "--font-cinzel",
@@ -169,6 +174,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   const settings = await loadPublicSettings();
   const gaId = settings?.seo.googleAnalyticsId?.trim();
 
@@ -179,12 +185,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       >
         {gaId ? (
           <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${gaId}');`,
-              }}
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+              nonce={nonce}
             />
+            <Script id="ga-init" strategy="afterInteractive" nonce={nonce}>
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${gaId}');`}
+            </Script>
           </>
         ) : null}
         <UiProvider>

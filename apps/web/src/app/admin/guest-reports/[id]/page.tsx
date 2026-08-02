@@ -8,6 +8,7 @@ import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
 import { USER_ADMIN_ROLES, useAdminAccess } from "@/components/admin/use-admin-access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatBirthTime } from "@/lib/birth-datetime";
 
 type GuestDetail = {
   id: string;
@@ -156,9 +157,7 @@ export default function AdminGuestReportDetailPage() {
               Time:{" "}
               {report.unknownBirthTime
                 ? "Unknown"
-                : report.birthTime
-                  ? String(report.birthTime).slice(0, 8)
-                  : "—"}
+                : formatBirthTime(report.birthTime) || "—"}
             </div>
             <div>Timezone: {report.timezone}</div>
             <div>

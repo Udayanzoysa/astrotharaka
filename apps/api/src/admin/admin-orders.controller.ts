@@ -21,6 +21,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from '../orders/orders.service';
 import { AppException } from '../common/errors/app.exception';
 import { AdminOrderStatusDto } from './dto/admin-order-status.dto';
+import { formatDateOnly, formatTimeOnly } from '../users/profile-serialize';
 
 @Controller('admin/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -316,8 +317,8 @@ export class AdminOrdersController {
         id: order.birthProfile.id,
         fullName: order.birthProfile.fullName,
         birthPlaceName: order.birthProfile.birthPlaceName,
-        birthDate: order.birthProfile.birthDate,
-        birthTime: order.birthProfile.birthTime,
+        birthDate: formatDateOnly(order.birthProfile.birthDate),
+        birthTime: formatTimeOnly(order.birthProfile.birthTime),
         unknownBirthTime: order.birthProfile.unknownBirthTime,
         timezone: order.birthProfile.timezone,
       },

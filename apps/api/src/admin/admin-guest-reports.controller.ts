@@ -31,6 +31,7 @@ import { AdminGuestOutreachDto } from './dto/admin-outreach.dto';
 import { MailService } from '../notifications/mail.service';
 import { SmsService } from '../notifications/sms.service';
 import { SiteSettingsService } from '../notifications/site-settings.service';
+import { formatDateOnly, formatTimeOnly } from '../users/profile-serialize';
 
 @Controller('admin/guest-reports')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -221,8 +222,8 @@ export class AdminGuestReportsController {
       gender: report.gender,
       email: report.email,
       mobile: report.mobile,
-      birthDate: report.birthDate,
-      birthTime: report.birthTime,
+      birthDate: formatDateOnly(report.birthDate),
+      birthTime: formatTimeOnly(report.birthTime),
       unknownBirthTime: report.unknownBirthTime,
       birthPlaceName: report.birthPlaceName,
       latitude: report.latitude,
