@@ -1,4 +1,5 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateBrandingSettingsDto {
   @IsString()
@@ -79,4 +80,18 @@ export class UpdateVerificationSettingsDto {
   @IsString()
   @IsIn(['EMAIL', 'MOBILE'])
   verificationMethod!: string;
+}
+
+export class UpdateFreemiumSettingsDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  guestPreviewLimit!: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(720)
+  guestPreviewWindowHours!: number;
 }

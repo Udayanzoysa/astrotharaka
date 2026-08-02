@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { WarningBanner } from "@/components/ui/warning-banner";
 
-type TabId = "branding" | "seo" | "email" | "verification";
+type TabId = "branding" | "seo" | "freemium" | "email" | "verification";
+
+type FreemiumSettings = {
+  guestPreviewLimit: number;
+  guestPreviewWindowHours: number;
+};
 
 type VerificationSettings = {
   verificationMethod: string;
@@ -56,6 +61,7 @@ type TemplateCatalog = {
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: "branding", label: "Branding" },
   { id: "seo", label: "SEO" },
+  { id: "freemium", label: "Guest free preview" },
   { id: "email", label: "Email / SMTP" },
   { id: "verification", label: "Verification Settings" },
 ];
@@ -69,6 +75,7 @@ export default function AdminSettingsPage() {
 
   const [branding, setBranding] = useState<BrandingSettings | null>(null);
   const [seo, setSeo] = useState<SeoSettings | null>(null);
+  const [freemium, setFreemium] = useState<FreemiumSettings | null>(null);
 
   const [smtp, setSmtp] = useState<SmtpPublic | null>(null);
   const [templates, setTemplates] = useState<TemplateCatalog | null>(null);
@@ -87,15 +94,20 @@ export default function AdminSettingsPage() {
     if (!token) return;
     void (async () => {
       try {
-        const [b, s, smtpCfg, t, v] = await Promise.all([
+        const [b, s, f, smtpCfg, t, v] = await Promise.all([
           apiRequest<BrandingSettings>("/admin/settings/branding", { token }),
           apiRequest<SeoSettings>("/admin/settings/seo", { token }),
+          apiRequest<FreemiumSettings>("/admin/settings/freemium", { token }).catch(() => ({
+            guestPreviewLimit: 2,
+            guestPreviewWindowHours: 24,
+          })),
           apiRequest<SmtpPublic>("/admin/settings/smtp", { token }),
           apiRequest<TemplateCatalog>("/admin/settings/email-templates", { token }),
           apiRequest<VerificationSettings>("/admin/settings/verification", { token }).catch(() => ({ verificationMethod: "EMAIL" })),
         ]);
         setBranding(b);
         setSeo(s);
+        setFreemium(f);
         setSmtp(smtpCfg);
         setHost(smtpCfg.host);
         setPort(smtpCfg.port);
@@ -168,6 +180,30 @@ export default function AdminSettingsPage() {
       });
       setSeo(next);
       setSaved("SEO settings saved.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onSaveFreemium(e: FormEvent) {
+    e.preventDefault();
+    if (!token || !freemium) return;
+    setSaving(true);
+    setError("");
+    setSaved("");
+    try {
+      const next = await apiRequest<FreemiumSettings>("/admin/settings/freemium", {
+        token,
+        method: "PUT",
+        body: {
+          guestPreviewLimit: Number(freemium.guestPreviewLimit),
+          guestPreviewWindowHours: Number(freemium.guestPreviewWindowHours),
+        },
+      });
+      setFreemium(next);
+      setSaved("Guest free-preview settings saved.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Save failed");
     } finally {
@@ -443,6 +479,70 @@ export default function AdminSettingsPage() {
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={saving}>
                   {saving ? "Saving…" : "Save SEO"}
+                </Button>
+              </div>
+            </>
+          )}
+        </form>
+      ) : null}
+
+      {tab === "freemium" ? (
+        <form
+          onSubmit={(e) => void onSaveFreemium(e)}
+          className="space-y-4 rounded-2xl border border-line bg-[color-mix(in_srgb,var(--bg)_90%,#13213a)] p-4 sm:p-5"
+        >
+          <div>
+            <h2 className="font-heading text-lg text-ink">Guest free preview</h2>
+            <p className="mt-1 text-xs text-muted">
+              How many free horoscope / baby-name / porondam previews a guest can use per browser
+              visit (session). Counter resets after the window hours, or when they start a new
+              browser session.
+            </p>
+          </div>
+          {!freemium ? (
+            <p className="text-sm text-muted">Loading…</p>
+          ) : (
+            <>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field
+                  label="Free previews per guest session"
+                  name="guestPreviewLimit"
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={String(freemium.guestPreviewLimit)}
+                  onChange={(e) =>
+                    setFreemium({
+                      ...freemium,
+                      guestPreviewLimit: Number(e.target.value || 1),
+                    })
+                  }
+                  required
+                />
+                <Field
+                  label="Reset window (hours)"
+                  name="guestPreviewWindowHours"
+                  type="number"
+                  min={1}
+                  max={720}
+                  value={String(freemium.guestPreviewWindowHours)}
+                  onChange={(e) =>
+                    setFreemium({
+                      ...freemium,
+                      guestPreviewWindowHours: Number(e.target.value || 24),
+                    })
+                  }
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted">
+                Example: limit <strong>2</strong>, window <strong>24</strong> → each guest can run
+                2 free previews; after 24 hours (or a new browser session) they get 2 again.
+                Logged-in users still need a paid package.
+              </p>
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={saving}>
+                  {saving ? "Saving…" : "Save freemium"}
                 </Button>
               </div>
             </>

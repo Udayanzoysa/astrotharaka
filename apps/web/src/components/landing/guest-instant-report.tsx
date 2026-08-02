@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, apiRequest } from "@/lib/api";
 import { readBirthDraft, writeBirthDraft } from "@/lib/birth-draft";
-import { canGuestUse, consumeGuestUse, markFreePreviewUsedLocally } from "@/lib/guest-usage";
+import { canGuestUse, consumeGuestUse, getGuestFreeLimit } from "@/lib/guest-usage";
 import { guestReportPath, saveGuestReport } from "@/lib/saved-reports";
 import type { Language } from "@/lib/types";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -309,7 +309,6 @@ export function GuestInstantReport(_props: Props = {}) {
         GuestCreateResponse & { accessMode?: string; fullUnlocked?: boolean }
       >("/guest-reports", { body, token: accessToken });
       if (created.accessMode === "FREE_PREVIEW") {
-        markFreePreviewUsedLocally();
         consumeGuestUse("horoscope");
       }
       setReportLocked(created.fullUnlocked !== true);
@@ -665,18 +664,17 @@ export function GuestInstantReport(_props: Props = {}) {
                                     <p className="mt-1 text-[11px] text-muted">
                                       {t("guestSectionLockedHint")}
                                     </p>
-                                    <button
+                                    <Button
                                       type="button"
-                                      className="mx-auto mt-3 block w-full max-w-[14rem]"
+                                      fullWidth
+                                      className="guest-glow-btn mx-auto mt-3 block min-h-9 w-full max-w-[14rem] text-xs"
                                       onClick={() => {
                                         setGateStep("packages");
                                         setShowPackages(true);
                                       }}
                                     >
-                                      <Button fullWidth className="guest-glow-btn min-h-9 text-xs">
-                                        {t("guestBuyOnce")}
-                                      </Button>
-                                    </button>
+                                      {t("guestBuyOnce")}
+                                    </Button>
                                   </div>
                                 ) : null}
                               </div>
@@ -937,7 +935,9 @@ export function GuestInstantReport(_props: Props = {}) {
             compact ? "text-[11px] leading-tight sm:text-xs" : "text-xs"
           }`}
         >
-          {previewConsumed ? t("hadahanaHint") : t("guestFreeOnceHint")}
+          {previewConsumed
+            ? t("hadahanaHint")
+            : t("guestFreeOnceHint").replace("{count}", String(getGuestFreeLimit()))}
         </p>
         {ready && !modalOpen ? (
           <div className="flex flex-col gap-2">

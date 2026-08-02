@@ -3,9 +3,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   BRANDING_DEFAULTS,
   BRANDING_SETTING_KEYS,
+  FREEMIUM_DEFAULTS,
+  FREEMIUM_SETTING_KEYS,
   SEO_DEFAULTS,
   SEO_SETTING_KEYS,
   type BrandingSettings,
+  type FreemiumSettings,
   type SeoSettings,
 } from './site-settings.types';
 
@@ -77,9 +80,65 @@ export class SiteSettingsService {
     return this.getSeo();
   }
 
+  async getFreemium(): Promise<FreemiumSettings> {
+    const map = await this.loadKeys(Object.values(FREEMIUM_SETTING_KEYS));
+    return {
+      guestPreviewLimit: this.parsePositiveInt(
+        map.get(FREEMIUM_SETTING_KEYS.guestPreviewLimit),
+        FREEMIUM_DEFAULTS.guestPreviewLimit,
+        1,
+        50,
+      ),
+      guestPreviewWindowHours: this.parsePositiveInt(
+        map.get(FREEMIUM_SETTING_KEYS.guestPreviewWindowHours),
+        FREEMIUM_DEFAULTS.guestPreviewWindowHours,
+        1,
+        720,
+      ),
+    };
+  }
+
+  async saveFreemium(input: FreemiumSettings): Promise<FreemiumSettings> {
+    const guestPreviewLimit = this.parsePositiveInt(
+      String(input.guestPreviewLimit),
+      FREEMIUM_DEFAULTS.guestPreviewLimit,
+      1,
+      50,
+    );
+    const guestPreviewWindowHours = this.parsePositiveInt(
+      String(input.guestPreviewWindowHours),
+      FREEMIUM_DEFAULTS.guestPreviewWindowHours,
+      1,
+      720,
+    );
+    await this.upsertMany([
+      { key: FREEMIUM_SETTING_KEYS.guestPreviewLimit, value: String(guestPreviewLimit) },
+      {
+        key: FREEMIUM_SETTING_KEYS.guestPreviewWindowHours,
+        value: String(guestPreviewWindowHours),
+      },
+    ]);
+    return this.getFreemium();
+  }
+
   async getPublic() {
-    const [branding, seo] = await Promise.all([this.getBranding(), this.getSeo()]);
-    return { branding, seo };
+    const [branding, seo, freemium] = await Promise.all([
+      this.getBranding(),
+      this.getSeo(),
+      this.getFreemium(),
+    ]);
+    return { branding, seo, freemium };
+  }
+
+  private parsePositiveInt(
+    raw: string | undefined,
+    fallback: number,
+    min: number,
+    max: number,
+  ): number {
+    const n = Number.parseInt(String(raw ?? ''), 10);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, n));
   }
 
   private async loadKeys(keys: string[]) {

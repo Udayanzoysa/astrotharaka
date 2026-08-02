@@ -261,7 +261,8 @@ const en: Dictionary = {
   horoscopeUsingProfile: "Generating for",
   guestGenerating: "Aligning your stars…",
   guestNoAccount: "One free preview for guests.",
-  guestFreeOnceHint: "Guests: 1 free preview · then create an account & buy a package.",
+  guestFreeOnceHint:
+    "Guests: {count} free preview(s) per visit · then create an account & buy a package.",
   guestTryAnother: "Try another birth detail",
   guestUpgradeHint: "Unlock the full one-time report in the shop.",
   guestPreviewLabel: "Free peek · first paragraph",
@@ -642,7 +643,8 @@ const si: Dictionary = {
   horoscopeUsingProfile: "වාර්තාව සකසන්නේ",
   guestGenerating: "ග්‍රහ පිහිටීම් ගණනය කරමින්…",
   guestNoAccount: "අමුත්තන්ට නොමිලේ එක් පෙරදසුනක්.",
-  guestFreeOnceHint: "අමුත්තන්: නොමිලේ 1 වරක් · පසුව ගිණුම සාදා පැකේජයක් මිලදී ගන්න.",
+  guestFreeOnceHint:
+    "අමුත්තන්: නොමිලේ {count} වරක් එක් සැසියකට · පසුව ගිණුම සාදා පැකේජයක් මිලදී ගන්න.",
   guestTryAnother: "වෙනත් විස්තර ඇතුළත් කර බලන්න",
   guestUpgradeHint: "ඔබේ සම්පූර්ණ කේන්ද්‍ර වාර්තාව මිලදී ගන්න.",
   guestPreviewLabel: "නොමිලේ පෙරදසුන · පළමු කොටස",
@@ -1023,7 +1025,8 @@ const ta: Dictionary = {
   horoscopeUsingProfile: "அறிக்கை",
   guestGenerating: "நட்சத்திரங்கள் அணியில்…",
   guestNoAccount: "விருந்தினருக்கு ஒரு இலவச முன்னோட்டம்.",
-  guestFreeOnceHint: "விருந்தினர்: 1 இலவசம் · பிறகு கணக்கு உருவாக்கி தொகுப்பு வாங்கவும்.",
+  guestFreeOnceHint:
+    "விருந்தினர்: ஒரு வருகையில் {count} இலவசம் · பிறகு கணக்கு உருவாக்கி தொகுப்பு வாங்கவும்.",
   guestTryAnother: "வேறு விவரங்களுடன் முயற்சிக்கவும்",
   guestUpgradeHint: "முழு ஒருமுறை அறிக்கையை கடையில் திறக்கவும்.",
   guestPreviewLabel: "இலவச பார்வை · முதல் பத்தி",

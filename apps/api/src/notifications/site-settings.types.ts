@@ -21,6 +21,11 @@ export const SEO_SETTING_KEYS = {
   ogImageUrl: "seo.ogImageUrl",
 } as const;
 
+export const FREEMIUM_SETTING_KEYS = {
+  guestPreviewLimit: "freemium.guestPreviewLimit",
+  guestPreviewWindowHours: "freemium.guestPreviewWindowHours",
+} as const;
+
 export const BRANDING_DEFAULTS = {
   siteName: "Astro Tharaka",
   description:
@@ -48,6 +53,12 @@ export const SEO_DEFAULTS = {
   ogImageUrl: "/brand/taraka-mark.png",
 } as const;
 
+/** Guest free previews: N uses per browser session key within a rolling window. */
+export const FREEMIUM_DEFAULTS = {
+  guestPreviewLimit: 2,
+  guestPreviewWindowHours: 24,
+} as const;
+
 export type BrandingSettings = {
   siteName: string;
   description: string;
@@ -69,4 +80,11 @@ export type SeoSettings = {
   googleAnalyticsId: string;
   googleSearchConsoleCode: string;
   ogImageUrl: string;
+};
+
+export type FreemiumSettings = {
+  /** How many free guest previews allowed per guest session key. */
+  guestPreviewLimit: number;
+  /** Rolling window (hours) before the guest usage counter resets. */
+  guestPreviewWindowHours: number;
 };

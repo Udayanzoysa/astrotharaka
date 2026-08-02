@@ -1,7 +1,13 @@
 /** Guest fingerprint + free-preview helpers (server enforces; client mirrors for UX). */
 
 const GUEST_KEY = "taraka_fp";
-const USED_KEY = "taraka_free_preview_used";
+const USED_COUNT_KEY = "taraka_free_preview_used_count";
+const LIMIT_KEY = "taraka_free_preview_limit";
+/** Legacy boolean flag from one-time free preview — migrated on read. */
+const LEGACY_USED_KEY = "taraka_free_preview_used";
+
+/** Default until /free-preview/status or site-settings sync. */
+export const DEFAULT_GUEST_FREE_LIMIT = 2;
 
 export type GuestService = "horoscope" | "babyNames" | "porondam";
 
@@ -14,18 +20,66 @@ export type PendingCheckout = {
   savedAt: number;
 };
 
+export type FreePreviewStatus = {
+  guestKey?: string;
+  limit: number;
+  used: number;
+  remaining: number;
+  windowHours?: number;
+  hasUsedFreePreview?: boolean;
+  canUseFreePreview?: boolean;
+};
+
 const PENDING_KEY = "taraka_pending_checkout";
 
-export function getOrCreateGuestKey(): string {
-  if (typeof window === "undefined") return "";
+function sessionStore(): Storage | null {
+  if (typeof window === "undefined") return null;
   try {
-    let key = window.localStorage.getItem(GUEST_KEY);
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+function localStore(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function notifyUsageChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event("taraka-guest-usage"));
+}
+
+/**
+ * Browser-session guest key (sessionStorage).
+ * New browser session → new key → fresh free-preview allowance (server still enforces window + soft IP cap).
+ */
+export function getOrCreateGuestKey(): string {
+  const session = sessionStore();
+  const local = localStore();
+  if (!session && !local) return "";
+
+  try {
+    let key = session?.getItem(GUEST_KEY) || "";
+    // Migrate prior localStorage fingerprint into this session once.
+    if (!key && local) {
+      const legacy = local.getItem(GUEST_KEY) || "";
+      if (legacy && /^[a-zA-Z0-9_-]{8,64}$/.test(legacy)) {
+        key = legacy;
+        session?.setItem(GUEST_KEY, key);
+      }
+    }
     if (!key || !/^[a-zA-Z0-9_-]{8,64}$/.test(key)) {
       key =
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID().replace(/-/g, "")
           : `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-      window.localStorage.setItem(GUEST_KEY, key);
+      session?.setItem(GUEST_KEY, key);
     }
     return key;
   } catch {
@@ -34,29 +88,60 @@ export function getOrCreateGuestKey(): string {
 }
 
 export function rememberGuestKey(key: string | null | undefined) {
-  if (typeof window === "undefined" || !key) return;
-  if (!/^[a-zA-Z0-9_-]{8,64}$/.test(key)) return;
-  window.localStorage.setItem(GUEST_KEY, key);
+  if (!key || !/^[a-zA-Z0-9_-]{8,64}$/.test(key)) return;
+  sessionStore()?.setItem(GUEST_KEY, key);
+}
+
+export function getGuestFreeLimit(): number {
+  const raw = sessionStore()?.getItem(LIMIT_KEY);
+  const n = Number.parseInt(String(raw ?? ""), 10);
+  if (Number.isFinite(n) && n >= 1) return n;
+  return DEFAULT_GUEST_FREE_LIMIT;
+}
+
+export function getGuestUsedCount(): number {
+  const session = sessionStore();
+  if (!session) return 0;
+  const raw = session.getItem(USED_COUNT_KEY);
+  if (raw != null) {
+    const n = Number.parseInt(raw, 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+  // Migrate legacy one-shot flag
+  if (localStore()?.getItem(LEGACY_USED_KEY) === "1" || session.getItem(LEGACY_USED_KEY) === "1") {
+    session.setItem(USED_COUNT_KEY, "1");
+    return 1;
+  }
+  return 0;
+}
+
+export function syncFreePreviewStatus(status: FreePreviewStatus) {
+  const session = sessionStore();
+  if (!session) return;
+  if (status.guestKey) rememberGuestKey(status.guestKey);
+  session.setItem(LIMIT_KEY, String(Math.max(1, status.limit)));
+  session.setItem(USED_COUNT_KEY, String(Math.max(0, status.used)));
+  notifyUsageChanged();
 }
 
 export function markFreePreviewUsedLocally() {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(USED_KEY, "1");
-  window.dispatchEvent(new Event("taraka-guest-usage"));
+  const session = sessionStore();
+  if (!session) return;
+  const next = getGuestUsedCount() + 1;
+  session.setItem(USED_COUNT_KEY, String(next));
+  notifyUsageChanged();
 }
 
 export function hasUsedFreePreviewLocally(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(USED_KEY) === "1";
+  return getGuestRemaining() <= 0;
 }
 
-/** @deprecated use hasUsedFreePreviewLocally — kept for banner compatibility */
 export function canGuestUse(_service?: GuestService): boolean {
-  return !hasUsedFreePreviewLocally();
+  return getGuestRemaining() > 0;
 }
 
 export function getGuestRemaining(_service?: GuestService): number {
-  return hasUsedFreePreviewLocally() ? 0 : 1;
+  return Math.max(0, getGuestFreeLimit() - getGuestUsedCount());
 }
 
 export function consumeGuestUse(_service?: GuestService) {
@@ -66,14 +151,14 @@ export function consumeGuestUse(_service?: GuestService) {
 
 export function savePendingCheckout(data: Omit<PendingCheckout, "savedAt">) {
   const payload: PendingCheckout = { ...data, savedAt: Date.now() };
-  window.localStorage.setItem(PENDING_KEY, JSON.stringify(payload));
+  localStore()?.setItem(PENDING_KEY, JSON.stringify(payload));
   return payload;
 }
 
 export function readPendingCheckout(): PendingCheckout | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(PENDING_KEY);
+    const raw = localStore()?.getItem(PENDING_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as PendingCheckout;
   } catch {
@@ -82,8 +167,8 @@ export function readPendingCheckout(): PendingCheckout | null {
 }
 
 export function clearPendingCheckout() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(PENDING_KEY);
+  localStore()?.removeItem(PENDING_KEY);
 }
 
-export const GUEST_FREE_LIMIT = 1;
+/** @deprecated use getGuestFreeLimit() — kept for older imports */
+export const GUEST_FREE_LIMIT = DEFAULT_GUEST_FREE_LIMIT;

@@ -5,6 +5,7 @@ import { FreePreviewService as FreePreviewServiceKind } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/errors/app.exception';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { SiteSettingsService } from '../notifications/site-settings.service';
 
 export type AccessMode = 'FREE_PREVIEW' | 'SUBSCRIPTION';
 
@@ -18,6 +19,7 @@ export class FreePreviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly subscriptions: SubscriptionsService,
+    private readonly siteSettings: SiteSettingsService,
   ) {}
 
   hashIp(ip: string | null | undefined): string | null {
@@ -40,35 +42,61 @@ export class FreePreviewService {
     );
   }
 
-  async hasUsedPreview(opts: {
-    userId?: string | null;
-    guestKey?: string | null;
+  private windowStart(hours: number): Date {
+    return new Date(Date.now() - hours * 60 * 60 * 1000);
+  }
+
+  /** Count free previews for this browser session key inside the rolling window. */
+  async countGuestUses(guestKey: string, since: Date): Promise<number> {
+    return this.prisma.freePreviewLog.count({
+      where: {
+        guestKey,
+        createdAt: { gte: since },
+      },
+    });
+  }
+
+  /**
+   * Soft IP abuse cap (not a hard "1 forever" gate).
+   * Allows shared NAT / office Wi‑Fi while blocking key-rotation spam.
+   */
+  async countIpUses(ipHash: string, since: Date): Promise<number> {
+    return this.prisma.freePreviewLog.count({
+      where: {
+        ipHash,
+        createdAt: { gte: since },
+      },
+    });
+  }
+
+  async getUsage(opts: {
+    guestKey: string;
     ipHash?: string | null;
-  }): Promise<boolean> {
-    if (opts.userId) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: opts.userId },
-        select: { hasUsedFreePreview: true },
-      });
-      if (user?.hasUsedFreePreview) return true;
-    }
-
-    const or: Array<{ guestKey?: string; ipHash?: string; userId?: string }> = [];
-    if (opts.guestKey) or.push({ guestKey: opts.guestKey });
-    if (opts.ipHash) or.push({ ipHash: opts.ipHash });
-    if (opts.userId) or.push({ userId: opts.userId });
-    if (or.length === 0) return false;
-
-    const existing = await this.prisma.freePreviewLog.findFirst({ where: { OR: or } });
-    return Boolean(existing);
+  }) {
+    const freemium = await this.siteSettings.getFreemium();
+    const since = this.windowStart(freemium.guestPreviewWindowHours);
+    const used = await this.countGuestUses(opts.guestKey, since);
+    const remaining = Math.max(0, freemium.guestPreviewLimit - used);
+    const ipUsed = opts.ipHash ? await this.countIpUses(opts.ipHash, since) : 0;
+    // Soft cap: same IP can burn through several browser sessions, not unlimited.
+    const ipCap = freemium.guestPreviewLimit * 10;
+    return {
+      limit: freemium.guestPreviewLimit,
+      windowHours: freemium.guestPreviewWindowHours,
+      used,
+      remaining,
+      ipUsed,
+      ipCap,
+      ipBlocked: Boolean(opts.ipHash) && ipUsed >= ipCap,
+    };
   }
 
   /**
    * Decide whether the caller may generate now.
    * - Active subscription → SUBSCRIPTION (caller must consumeQuota)
-   * - Guest never used free preview → FREE_PREVIEW
-   * - Guest already used → LOGIN_REQUIRED (register + buy package)
-   * - Logged-in without active package → SUBSCRIPTION_REQUIRED (must buy)
+   * - Guest under limit in window → FREE_PREVIEW
+   * - Guest at/over limit → LOGIN_REQUIRED
+   * - Logged-in without active package → SUBSCRIPTION_REQUIRED
    */
   async authorize(opts: {
     userId?: string | null;
@@ -94,14 +122,14 @@ export class FreePreviewService {
       );
     }
 
-    const used = await this.hasUsedPreview({ guestKey, ipHash });
-    if (!used) {
+    const usage = await this.getUsage({ guestKey, ipHash });
+    if (usage.remaining > 0 && !usage.ipBlocked) {
       return { mode: 'FREE_PREVIEW', guestKey };
     }
 
     throw new AppException(
       ErrorCodes.LOGIN_REQUIRED,
-      'Free preview already used. Please register or log in and buy a package.',
+      `Free preview limit reached (${usage.limit} per visit). Please register or log in and buy a package.`,
       HttpStatus.FORBIDDEN,
     );
   }
@@ -141,12 +169,18 @@ export class FreePreviewService {
     if (opts.userId) {
       hasSubscription = Boolean(await this.subscriptions.getActiveSubscription(opts.userId));
     }
-    // Guests only get the one-time free preview; accounts require a package.
-    const guestUsed = await this.hasUsedPreview({ guestKey, ipHash });
+
+    const usage = await this.getUsage({ guestKey, ipHash });
+    const canUseFreePreview = !opts.userId && usage.remaining > 0 && !usage.ipBlocked;
+
     return {
       guestKey,
-      hasUsedFreePreview: guestUsed,
-      canUseFreePreview: !opts.userId && !guestUsed,
+      limit: usage.limit,
+      used: usage.used,
+      remaining: usage.remaining,
+      windowHours: usage.windowHours,
+      hasUsedFreePreview: usage.remaining <= 0 || usage.ipBlocked,
+      canUseFreePreview,
       hasActiveSubscription: hasSubscription,
     };
   }

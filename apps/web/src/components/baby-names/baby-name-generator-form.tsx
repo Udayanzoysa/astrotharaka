@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ApiError, apiRequest } from "@/lib/api";
 import { readBirthDraft, writeBirthDraft } from "@/lib/birth-draft";
-import { canGuestUse, consumeGuestUse } from "@/lib/guest-usage";
+import { canGuestUse, consumeGuestUse, getGuestFreeLimit } from "@/lib/guest-usage";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useUi } from "@/components/providers/ui-provider";
 import { usePreviewConsumed } from "@/hooks/use-preview-consumed";
@@ -263,7 +263,9 @@ export function BabyNameGeneratorForm() {
             {loading ? t("babyNamesGenerating") : t("babyNamesGenerate")}
           </Button>
           <p className="text-center text-xs text-muted">
-            {previewConsumed ? t("hadahanaHint") : t("guestFreeOnceHint")}
+            {previewConsumed
+              ? t("hadahanaHint")
+              : t("guestFreeOnceHint").replace("{count}", String(getGuestFreeLimit()))}
           </p>
         </form>
       </Card>

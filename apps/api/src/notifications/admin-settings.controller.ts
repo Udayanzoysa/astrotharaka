@@ -16,6 +16,7 @@ import { SiteSettingsService } from './site-settings.service';
 import { SendTestEmailDto, UpdateSmtpSettingsDto } from './dto/smtp-settings.dto';
 import {
   UpdateBrandingSettingsDto,
+  UpdateFreemiumSettingsDto,
   UpdateSeoSettingsDto,
   UpdateVerificationSettingsDto,
 } from './dto/site-settings.dto';
@@ -126,5 +127,15 @@ export class AdminSettingsController {
   @Put('verification')
   saveVerification(@Body() dto: UpdateVerificationSettingsDto) {
     return this.siteSettings.saveVerificationSettings(dto);
+  }
+
+  @Get('freemium')
+  getFreemium() {
+    return this.siteSettings.getFreemium();
+  }
+
+  @Put('freemium')
+  saveFreemium(@Body() dto: UpdateFreemiumSettingsDto) {
+    return this.siteSettings.saveFreemium(dto);
   }
 }

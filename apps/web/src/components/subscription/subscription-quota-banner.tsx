@@ -22,7 +22,7 @@ export function SubscriptionQuotaBanner({ service }: Props) {
   const { t } = useUi();
   const { user, token } = useAuth();
   const [mine, setMine] = useState<UserSubscription | null | undefined>(undefined);
-  const [freeLeft, setFreeLeft] = useState(1);
+  const [freeLeft, setFreeLeft] = useState(2);
 
   useEffect(() => {
     const sync = () => setFreeLeft(getGuestRemaining(guestKey[service]));
