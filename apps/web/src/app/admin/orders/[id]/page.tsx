@@ -8,6 +8,7 @@ import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
 import { ORDER_ADMIN_ROLES, useAdminAccess } from "@/components/admin/use-admin-access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatBirthTime } from "@/lib/birth-datetime";
 
 type OrderDetail = {
   id: string;
@@ -201,7 +202,7 @@ export default function AdminOrderDetailPage() {
             {order.birthProfile.unknownBirthTime
               ? " · time unknown"
               : order.birthProfile.birthTime
-                ? ` · ${String(order.birthProfile.birthTime).slice(0, 8)}`
+                ? ` · ${formatBirthTime(order.birthProfile.birthTime)}`
                 : ""}
           </p>
         </Card>

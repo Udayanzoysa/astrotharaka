@@ -11,6 +11,7 @@ import { QueueService } from '../queue/queue.service';
 import { CreateGuestReportDto } from './dto/create-guest-report.dto';
 import { resolveLkPlace } from '../common/places-lk';
 import { resolveReportFilePath } from '../common/resolve-report-file';
+import { parseTimeOnly } from '../users/profile-serialize';
 
 const GUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -431,7 +432,6 @@ export class GuestReportsService {
   }
 
   private parseTime(value: string): Date {
-    const normalized = value.length === 5 ? `${value}:00` : value;
-    return new Date(`1970-01-01T${normalized}Z`);
+    return parseTimeOnly(value);
   }
 }

@@ -1,8 +1,12 @@
+import type { ReactNode } from "react";
+
 export function WarningBanner({
   message,
+  children,
   compact = false,
 }: {
-  message: string;
+  message?: ReactNode;
+  children?: ReactNode;
   compact?: boolean;
 }) {
   return (
@@ -19,7 +23,7 @@ export function WarningBanner({
         color: "var(--accent)",
       }}
     >
-      {message}
+      {children ?? message}
     </div>
   );
 }

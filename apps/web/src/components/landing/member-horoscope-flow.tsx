@@ -49,10 +49,17 @@ function toTimeInput(value: string | null | undefined): string {
   return hm ? `${hm[1]}:${hm[2]}` : "";
 }
 
+/** Account profile must include exact birth time for horoscope accuracy. */
 function profileComplete(user: User): boolean {
   const p = user.profile;
   if (!p) return false;
-  return Boolean(p.fullName && p.birthDate && p.birthPlaceName && (p.unknownBirthTime || p.birthTime));
+  return Boolean(
+    p.fullName &&
+      p.birthDate &&
+      p.birthPlaceName &&
+      p.birthTime &&
+      !p.unknownBirthTime,
+  );
 }
 
 export function MemberHoroscopeFlow({
@@ -72,7 +79,6 @@ export function MemberHoroscopeFlow({
   const [reportLanguage, setReportLanguage] = useState<Language>(
     (user.profile?.preferredLanguage as Language) || language,
   );
-  const [unknownBirthTime, setUnknownBirthTime] = useState(false);
   const [localError, setLocalError] = useState("");
 
   useEffect(() => {
@@ -111,8 +117,8 @@ export function MemberHoroscopeFlow({
       email: user.email,
       mobile: p.mobileNumber || undefined,
       birthDate: toDateInput(p.birthDate),
-      birthTime: p.unknownBirthTime ? undefined : toTimeInput(p.birthTime) || undefined,
-      unknownBirthTime: Boolean(p.unknownBirthTime),
+      birthTime: toTimeInput(p.birthTime) || undefined,
+      unknownBirthTime: false,
       birthPlaceName: p.birthPlaceName || "",
       language: reportLanguage,
       timezone: "Asia/Colombo",
@@ -122,8 +128,8 @@ export function MemberHoroscopeFlow({
   async function generateMyself() {
     setLocalError("");
     const body = buildMyselfBody();
-    if (!body) {
-      setLocalError(t("horoscopeProfileIncomplete"));
+    if (!body?.birthTime) {
+      setLocalError(t("horoscopeBirthTimeRequired"));
       return;
     }
     await onGenerate(body);
@@ -136,14 +142,19 @@ export function MemberHoroscopeFlow({
       setLocalError(t("horoscopePickProfile"));
       return;
     }
+    const selectedTime = toTimeInput(bp.birthTime);
+    if (bp.unknownBirthTime || !selectedTime) {
+      setLocalError(t("horoscopeBirthTimeRequired"));
+      return;
+    }
     await onGenerate({
       fullName: bp.fullName,
       gender: "other",
       email: user.email,
       mobile: user.profile?.mobileNumber || undefined,
       birthDate: toDateInput(bp.birthDate),
-      birthTime: bp.unknownBirthTime ? undefined : toTimeInput(bp.birthTime) || undefined,
-      unknownBirthTime: Boolean(bp.unknownBirthTime),
+      birthTime: selectedTime,
+      unknownBirthTime: false,
       birthPlaceName: bp.birthPlaceName,
       language: reportLanguage,
       timezone: bp.timezone || "Asia/Colombo",
@@ -157,11 +168,11 @@ export function MemberHoroscopeFlow({
     const form = new FormData(e.currentTarget);
     const fullName = String(form.get("fullName") ?? "").trim();
     const birthDate = String(form.get("birthDate") ?? "").trim();
-    const birthTime = unknownBirthTime ? undefined : String(form.get("birthTime") ?? "").trim();
+    const birthTime = String(form.get("birthTime") ?? "").trim();
     const birthPlaceName = String(form.get("birthPlaceName") ?? "").trim();
 
-    if (!fullName || !birthDate || !birthPlaceName || (!unknownBirthTime && !birthTime)) {
-      setLocalError(t("horoscopeProfileIncomplete"));
+    if (!fullName || !birthDate || !birthPlaceName || !birthTime) {
+      setLocalError(t("horoscopeBirthTimeRequired"));
       return;
     }
 
@@ -172,7 +183,7 @@ export function MemberHoroscopeFlow({
           fullName,
           birthDate,
           birthTime,
-          unknownBirthTime,
+          unknownBirthTime: false,
           birthPlaceName,
           preferredLanguage: reportLanguage,
           timezone: "Asia/Colombo",
@@ -186,7 +197,7 @@ export function MemberHoroscopeFlow({
         mobile: user.profile?.mobileNumber || undefined,
         birthDate,
         birthTime,
-        unknownBirthTime,
+        unknownBirthTime: false,
         birthPlaceName,
         language: reportLanguage,
         timezone: "Asia/Colombo",
@@ -271,12 +282,25 @@ export function MemberHoroscopeFlow({
             </ul>
           </div>
         ) : (
-          <div className="space-y-2">
-            <WarningBanner message={t("horoscopeProfileIncomplete")} />
-            <Link href="/settings" className="inline-block text-sm text-accent hover:underline">
-              {t("settings")}
-            </Link>
-          </div>
+          <WarningBanner>
+            {t("horoscopeProfileIncomplete")
+              .split("{settings}")
+              .map((part, i, arr) =>
+                i < arr.length - 1 ? (
+                  <span key={i}>
+                    {part}
+                    <Link
+                      href="/settings#birth-details"
+                      className="inline font-semibold text-[var(--accent)] underline decoration-[var(--accent)] decoration-2 underline-offset-[3px] hover:brightness-125 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    >
+                      {t("settings")}
+                    </Link>
+                  </span>
+                ) : (
+                  <span key={i}>{part}</span>
+                ),
+              )}
+          </WarningBanner>
         )}
 
         <label className="block space-y-1 text-ink">
@@ -414,26 +438,9 @@ export function MemberHoroscopeFlow({
       <Field label={t("fullName")} name="fullName" required compact className={fieldClass} />
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <Field label={t("birthDate")} name="birthDate" type="date" required compact className={fieldClass} />
-        <Field
-          label={t("birthTime")}
-          name="birthTime"
-          type="time"
-          disabled={unknownBirthTime}
-          required={!unknownBirthTime}
-          compact
-          className={fieldClass}
-        />
+        <Field label={t("birthTime")} name="birthTime" type="time" required compact className={fieldClass} />
       </div>
-      <label className="flex items-start gap-2 text-xs text-ink sm:text-sm">
-        <input
-          type="checkbox"
-          checked={unknownBirthTime}
-          onChange={(e) => setUnknownBirthTime(e.target.checked)}
-          className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
-        />
-        <span>{t("unknownTime")}</span>
-      </label>
-      {unknownBirthTime ? <WarningBanner message={t("accuracyWarning")} compact /> : null}
+      <p className="text-[11px] text-muted sm:text-xs">{t("birthDetailsRequiredHint")}</p>
       <Field label={t("birthPlace")} name="birthPlaceName" required compact className={fieldClass} />
       <label className="block space-y-1 text-ink">
         <span className="block text-xs text-muted sm:text-sm">{t("reportLanguage")}</span>

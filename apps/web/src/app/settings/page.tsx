@@ -10,8 +10,6 @@ import { useUi } from "@/components/providers/ui-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
-import { WarningBanner } from "@/components/ui/warning-banner";
-
 /** Normalize API date/time for HTML date/time inputs. */
 function toDateInput(value: string | null | undefined): string {
   if (!value) return "";
@@ -42,7 +40,6 @@ export default function SettingsPage() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("");
-  const [unknownBirthTime, setUnknownBirthTime] = useState(false);
   const [birthPlaceName, setBirthPlaceName] = useState("");
   const [gender, setGender] = useState("");
   const [preferredLanguage, setPreferredLanguage] = useState<Language>("si");
@@ -66,13 +63,21 @@ export default function SettingsPage() {
     setWhatsappNumber(p.whatsappNumber ?? "");
     setBirthDate(toDateInput(p.birthDate));
     setBirthTime(toTimeInput(p.birthTime));
-    setUnknownBirthTime(Boolean(p.unknownBirthTime));
     setBirthPlaceName(p.birthPlaceName ?? "");
     setGender(p.gender ?? "");
     setPreferredLanguage((p.preferredLanguage as Language) || language);
     setEmailConsent(Boolean(p.emailMarketingConsent));
     setWhatsappConsent(Boolean(p.whatsappMarketingConsent));
   }, [user, language]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#birth-details") return;
+    const el = document.getElementById("birth-details");
+    if (el) {
+      window.setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    }
+  }, [user]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -81,10 +86,16 @@ export default function SettingsPage() {
     setError("");
     setSaved(false);
 
-    const nextBirthDate = birthDate.trim() || null;
-    const nextBirthTime = unknownBirthTime ? null : birthTime.trim() || null;
-    const nextPlace = birthPlaceName.trim() || null;
+    const nextBirthDate = birthDate.trim();
+    const nextBirthTime = birthTime.trim();
+    const nextPlace = birthPlaceName.trim();
     const nextGender = gender.trim() || null;
+
+    if (!nextBirthDate || !nextBirthTime || !nextPlace) {
+      setError(t("birthDetailsRequiredHint"));
+      setSaving(false);
+      return;
+    }
 
     try {
       const updated = await apiRequest<User>("/users/me/profile", {
@@ -98,7 +109,7 @@ export default function SettingsPage() {
           preferredLanguage,
           birthDate: nextBirthDate,
           birthTime: nextBirthTime,
-          unknownBirthTime,
+          unknownBirthTime: false,
           birthPlaceName: nextPlace,
           gender: nextGender,
           emailMarketingConsent: emailConsent,
@@ -110,10 +121,10 @@ export default function SettingsPage() {
         fullName: fullName.trim(),
         email: email.trim().toLowerCase(),
         mobileNumber: mobileNumber.trim() || undefined,
-        birthDate: nextBirthDate ?? undefined,
-        birthTime: nextBirthTime ?? undefined,
-        unknownBirthTime,
-        birthPlaceName: nextPlace ?? undefined,
+        birthDate: nextBirthDate,
+        birthTime: nextBirthTime,
+        unknownBirthTime: false,
+        birthPlaceName: nextPlace,
         gender: nextGender ?? undefined,
         language: preferredLanguage,
         source: "profile",
@@ -175,40 +186,38 @@ export default function SettingsPage() {
             onChange={(e) => setWhatsappNumber(e.target.value)}
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div id="birth-details" className="scroll-mt-24 space-y-3 rounded-2xl border border-line/80 p-3 sm:p-4">
+            <div>
+              <h2 className="font-heading text-base text-ink">{t("birthDetailsSection")}</h2>
+              <p className="mt-0.5 text-xs text-muted">{t("birthDetailsRequiredHint")}</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label={t("birthDate")}
+                name="birthDate"
+                type="date"
+                required
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+              />
+              <Field
+                label={t("birthTime")}
+                name="birthTime"
+                type="time"
+                required
+                value={birthTime}
+                onChange={(e) => setBirthTime(e.target.value)}
+              />
+            </div>
             <Field
-              label={t("birthDate")}
-              name="birthDate"
-              type="date"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-            />
-            <Field
-              label={t("birthTime")}
-              name="birthTime"
-              type="time"
-              disabled={unknownBirthTime}
-              value={unknownBirthTime ? "" : birthTime}
-              onChange={(e) => setBirthTime(e.target.value)}
+              label={t("birthPlace")}
+              name="birthPlaceName"
+              required
+              value={birthPlaceName}
+              onChange={(e) => setBirthPlaceName(e.target.value)}
+              placeholder="Colombo, Kandy…"
             />
           </div>
-          <label className="flex min-h-11 items-center gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={unknownBirthTime}
-              onChange={(e) => setUnknownBirthTime(e.target.checked)}
-              className="h-5 w-5 accent-[var(--accent)]"
-            />
-            {t("unknownTime")}
-          </label>
-          {unknownBirthTime ? <WarningBanner message={t("accuracyWarning")} /> : null}
-          <Field
-            label={t("birthPlace")}
-            name="birthPlaceName"
-            value={birthPlaceName}
-            onChange={(e) => setBirthPlaceName(e.target.value)}
-            placeholder="Colombo, Kandy…"
-          />
 
           <label className="block space-y-1.5 text-sm">
             <span className="text-muted">{t("gender")}</span>

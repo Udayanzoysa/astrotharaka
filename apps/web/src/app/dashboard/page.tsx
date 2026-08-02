@@ -23,22 +23,28 @@ export default function DashboardPage() {
 
   const services = [
     {
+      href: "/#home-report",
+      title: t("serviceHoroscope"),
+      desc: t("serviceHoroscopeDesc"),
+      delay: "",
+    },
+    {
       href: "/baby-names",
       title: t("serviceBabyNames"),
       desc: t("serviceBabyNamesDesc"),
-      delay: "",
+      delay: "fade-up-delay-1",
     },
     {
       href: "/porondam",
       title: t("servicePorondam"),
       desc: t("servicePorondamDesc"),
-      delay: "fade-up-delay-1",
+      delay: "fade-up-delay-2",
     },
     {
       href: "/subscription",
       title: t("serviceSubscription"),
       desc: t("serviceSubscriptionDesc"),
-      delay: "fade-up-delay-2",
+      delay: "fade-up-delay-3",
     },
   ];
 
@@ -59,7 +65,7 @@ export default function DashboardPage() {
       <div className="mb-3">
         <h2 className="font-heading text-lg text-ink">{t("availableServices")}</h2>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {services.map((service) => (
           <Link key={service.href} href={service.href} className="block">
             <Card className={`fade-up h-full transition hover:border-accent/40 ${service.delay}`}>

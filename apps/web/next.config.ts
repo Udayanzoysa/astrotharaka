@@ -1,21 +1,10 @@
 import type { NextConfig } from "next";
 
-/** CSP allows Next.js (inline scripts, HMR in dev). Satisfies Lighthouse CSP enforcement. */
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "connect-src 'self' ws: wss: http: https:",
-  "media-src 'self' blob:",
-  "worker-src 'self' blob:",
-  "frame-ancestors 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-].join("; ");
-
+/**
+ * Static security headers only.
+ * CSP is set per-request in `src/middleware.ts` (nonce + strict-dynamic).
+ * Do not set Content-Security-Policy here — it would override/conflict with nonces.
+ */
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
@@ -29,7 +18,6 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: contentSecurityPolicy },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
