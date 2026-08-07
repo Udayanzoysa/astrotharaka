@@ -1,8 +1,11 @@
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEmail,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -11,6 +14,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { LanguageCode } from '@prisma/client';
+import { FOCUS_TOPIC_IDS, FOCUS_TOPIC_MAX } from '@astro/shared';
 
 export enum GuestGender {
   female = 'female',
@@ -68,4 +72,12 @@ export class CreateGuestReportDto {
   @IsOptional()
   @IsEnum(LanguageCode)
   language?: LanguageCode;
+
+  /** Optional focus topics; empty/omitted = default standard report. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(FOCUS_TOPIC_MAX)
+  @IsString({ each: true })
+  @IsIn([...FOCUS_TOPIC_IDS], { each: true })
+  focusTopics?: string[];
 }

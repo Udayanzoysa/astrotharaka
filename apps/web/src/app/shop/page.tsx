@@ -99,6 +99,9 @@ export default function ShopPage() {
             <Link href="/porondam">
               <Button variant="ghost">{t("servicePorondam")}</Button>
             </Link>
+            <Link href="/dream-interpretation">
+              <Button variant="ghost">{t("serviceDream")}</Button>
+            </Link>
           </div>
         </Card>
       ) : null}

@@ -9,7 +9,7 @@ const LEGACY_USED_KEY = "taraka_free_preview_used";
 /** Default until /free-preview/status or site-settings sync. */
 export const DEFAULT_GUEST_FREE_LIMIT = 2;
 
-export type GuestService = "horoscope" | "babyNames" | "porondam";
+export type GuestService = "horoscope" | "babyNames" | "porondam" | "dreamInterpretation";
 
 export type PendingCheckout = {
   packageId: string;
@@ -146,7 +146,7 @@ export function getGuestRemaining(_service?: GuestService): number {
 
 export function consumeGuestUse(_service?: GuestService) {
   markFreePreviewUsedLocally();
-  return { horoscope: 1, babyNames: 1, porondam: 1 };
+  return { horoscope: 1, babyNames: 1, porondam: 1, dreamInterpretation: 1 };
 }
 
 export function savePendingCheckout(data: Omit<PendingCheckout, "savedAt">) {

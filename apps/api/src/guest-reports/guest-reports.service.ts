@@ -3,7 +3,7 @@ import { basename } from 'path';
 import { randomBytes } from 'crypto';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorCodes } from '@astro/shared';
+import { ErrorCodes, normalizeFocusTopics } from '@astro/shared';
 import { ReportStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/errors/app.exception';
@@ -165,6 +165,7 @@ export class GuestReportsService {
     const downloadToken = randomBytes(32).toString('hex');
     const isFreePreview = access?.isFreePreview ?? true;
     const fullUnlocked = access?.fullUnlocked ?? false;
+    const focusTopics = normalizeFocusTopics(dto.focusTopics);
 
     const created = await this.prisma.guestReport.create({
       data: {
@@ -184,6 +185,7 @@ export class GuestReportsService {
         longitude,
         timezone: dto.timezone ?? 'Asia/Colombo',
         language: dto.language ?? 'si',
+        focusTopics,
         status: ReportStatus.QUEUED,
         expiresAt: new Date(Date.now() + GUEST_TTL_MS),
       },

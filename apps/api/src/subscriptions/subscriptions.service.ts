@@ -4,7 +4,7 @@ import { Prisma, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppException } from '../common/errors/app.exception';
 
-export type QuotaKind = 'BABY_NAMES' | 'PORONDAM' | 'HOROSCOPE';
+export type QuotaKind = 'BABY_NAMES' | 'PORONDAM' | 'HOROSCOPE' | 'DREAM_INTERPRETATION';
 
 @Injectable()
 export class SubscriptionsService {
@@ -23,6 +23,7 @@ export class SubscriptionsService {
     babyNamesQuota: number;
     porondamQuota: number;
     horoscopeQuota: number;
+    dreamInterpretationQuota: number;
     durationDays: number;
     isActive: boolean;
     sortOrder: number;
@@ -42,6 +43,7 @@ export class SubscriptionsService {
       babyNamesQuota: pkg.babyNamesQuota,
       porondamQuota: pkg.porondamQuota,
       horoscopeQuota: pkg.horoscopeQuota,
+      dreamInterpretationQuota: pkg.dreamInterpretationQuota,
       durationDays: pkg.durationDays,
       isActive: pkg.isActive,
       sortOrder: pkg.sortOrder,
@@ -62,6 +64,7 @@ export class SubscriptionsService {
       babyNamesQuota: number;
       porondamQuota: number;
       horoscopeQuota: number;
+      dreamInterpretationQuota: number;
       durationDays: number;
       startAt: Date;
       expiresAt: Date;
@@ -72,6 +75,7 @@ export class SubscriptionsService {
         babyNamesUsed: number;
         porondamUsed: number;
         horoscopeUsed: number;
+        dreamInterpretationUsed: number;
         monthCycle: string;
       } | null;
     },
@@ -79,6 +83,7 @@ export class SubscriptionsService {
     const babyUsed = sub.usage?.babyNamesUsed ?? 0;
     const porUsed = sub.usage?.porondamUsed ?? 0;
     const horUsed = sub.usage?.horoscopeUsed ?? 0;
+    const dreamUsed = sub.usage?.dreamInterpretationUsed ?? 0;
     return {
       id: sub.id,
       userId: sub.userId,
@@ -90,12 +95,15 @@ export class SubscriptionsService {
       babyNamesQuota: sub.babyNamesQuota,
       porondamQuota: sub.porondamQuota,
       horoscopeQuota: sub.horoscopeQuota,
+      dreamInterpretationQuota: sub.dreamInterpretationQuota,
       babyNamesUsed: babyUsed,
       porondamUsed: porUsed,
       horoscopeUsed: horUsed,
+      dreamInterpretationUsed: dreamUsed,
       babyNamesRemaining: Math.max(0, sub.babyNamesQuota - babyUsed),
       porondamRemaining: Math.max(0, sub.porondamQuota - porUsed),
       horoscopeRemaining: Math.max(0, sub.horoscopeQuota - horUsed),
+      dreamInterpretationRemaining: Math.max(0, sub.dreamInterpretationQuota - dreamUsed),
       durationDays: sub.durationDays,
       startAt: sub.startAt.toISOString(),
       expiresAt: sub.expiresAt.toISOString(),
@@ -141,6 +149,7 @@ export class SubscriptionsService {
     babyNamesQuota: number;
     porondamQuota: number;
     horoscopeQuota: number;
+    dreamInterpretationQuota: number;
     durationDays?: number;
     isActive?: boolean;
     sortOrder?: number;
@@ -164,6 +173,7 @@ export class SubscriptionsService {
         babyNamesQuota: data.babyNamesQuota,
         porondamQuota: data.porondamQuota,
         horoscopeQuota: data.horoscopeQuota,
+        dreamInterpretationQuota: data.dreamInterpretationQuota,
         durationDays: data.durationDays ?? 30,
         isActive: data.isActive ?? true,
         sortOrder: data.sortOrder ?? 0,
@@ -186,6 +196,7 @@ export class SubscriptionsService {
       babyNamesQuota?: number;
       porondamQuota?: number;
       horoscopeQuota?: number;
+      dreamInterpretationQuota?: number;
       durationDays?: number;
       isActive?: boolean;
       sortOrder?: number;
@@ -220,6 +231,8 @@ export class SubscriptionsService {
         babyNamesQuota: data.babyNamesQuota ?? existing.babyNamesQuota,
         porondamQuota: data.porondamQuota ?? existing.porondamQuota,
         horoscopeQuota: data.horoscopeQuota ?? existing.horoscopeQuota,
+        dreamInterpretationQuota:
+          data.dreamInterpretationQuota ?? existing.dreamInterpretationQuota,
         durationDays: data.durationDays ?? existing.durationDays,
         isActive: data.isActive ?? existing.isActive,
         sortOrder: data.sortOrder ?? existing.sortOrder,
@@ -303,6 +316,7 @@ export class SubscriptionsService {
         babyNamesQuota: pkg.babyNamesQuota,
         porondamQuota: pkg.porondamQuota,
         horoscopeQuota: pkg.horoscopeQuota,
+        dreamInterpretationQuota: pkg.dreamInterpretationQuota,
         durationDays: pkg.durationDays,
         startAt,
         expiresAt,
@@ -314,6 +328,7 @@ export class SubscriptionsService {
             babyNamesUsed: 0,
             porondamUsed: 0,
             horoscopeUsed: 0,
+            dreamInterpretationUsed: 0,
             monthCycle,
           },
         },
@@ -326,7 +341,7 @@ export class SubscriptionsService {
 
   /**
    * Verify active subscription + remaining quota, then increment usage by 1.
-   * Call before generating baby names / porondam / horoscope.
+   * Call before generating baby names / porondam / horoscope / dream interpretation.
    */
   async consumeQuota(userId: string, service: QuotaKind) {
     const sub = await this.getActiveSubscription(userId);
@@ -350,13 +365,17 @@ export class SubscriptionsService {
         ? 'babyNamesUsed'
         : service === 'PORONDAM'
           ? 'porondamUsed'
-          : 'horoscopeUsed';
+          : service === 'DREAM_INTERPRETATION'
+            ? 'dreamInterpretationUsed'
+            : 'horoscopeUsed';
     const quotaKey =
       service === 'BABY_NAMES'
         ? 'babyNamesQuota'
         : service === 'PORONDAM'
           ? 'porondamQuota'
-          : 'horoscopeQuota';
+          : service === 'DREAM_INTERPRETATION'
+            ? 'dreamInterpretationQuota'
+            : 'horoscopeQuota';
 
     const used = sub.usage[usedKey];
     const quota = sub[quotaKey];

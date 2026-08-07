@@ -5,7 +5,9 @@ import { FormEvent, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, apiRequest } from "@/lib/api";
 import { readBirthDraft, writeBirthDraft } from "@/lib/birth-draft";
+import { OptionalFocusTopics } from "@/components/reports/optional-focus-topics";
 import { canGuestUse, consumeGuestUse, getGuestFreeLimit } from "@/lib/guest-usage";
+import type { FocusTopicId } from "@/lib/focus-topics";
 import { guestReportPath, saveGuestReport } from "@/lib/saved-reports";
 import type { Language } from "@/lib/types";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -116,6 +118,7 @@ export function GuestInstantReport(_props: Props = {}) {
   const [mounted, setMounted] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [unknownBirthTime, setUnknownBirthTime] = useState(false);
+  const [focusTopics, setFocusTopics] = useState<FocusTopicId[]>([]);
   const [error, setError] = useState("");
   const [accuracyNote, setAccuracyNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -368,6 +371,7 @@ export function GuestInstantReport(_props: Props = {}) {
       birthPlaceName: String(form.get("birthPlaceName") ?? ""),
       language: (form.get("language") as Language) || language,
       timezone: "Asia/Colombo",
+      focusTopics: focusTopics.length ? focusTopics : undefined,
     });
   }
 
@@ -912,6 +916,8 @@ export function GuestInstantReport(_props: Props = {}) {
             </select>
           </label>
         </div>
+
+        <OptionalFocusTopics value={focusTopics} onChange={setFocusTopics} compact={compact} />
 
         {error && !modalOpen ? (
           <p className={`text-[var(--danger)] ${compact ? "text-xs sm:text-sm" : "text-sm"}`}>{error}</p>

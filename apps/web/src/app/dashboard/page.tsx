@@ -41,6 +41,12 @@ export default function DashboardPage() {
       delay: "fade-up-delay-2",
     },
     {
+      href: "/dream-interpretation",
+      title: t("serviceDream"),
+      desc: t("serviceDreamDesc"),
+      delay: "fade-up-delay-3",
+    },
+    {
       href: "/subscription",
       title: t("serviceSubscription"),
       desc: t("serviceSubscriptionDesc"),

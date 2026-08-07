@@ -63,7 +63,7 @@ export default function AdminPackagesPage() {
                 </p>
                 <p className="mt-1 text-xs text-muted">
                   Baby names {pkg.babyNamesQuota} · Porondam {pkg.porondamQuota} · Horoscope{" "}
-                  {pkg.horoscopeQuota}
+                  {pkg.horoscopeQuota} · Dreams {pkg.dreamInterpretationQuota}
                 </p>
               </div>
               <div className="flex gap-3 text-sm">

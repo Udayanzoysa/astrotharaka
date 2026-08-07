@@ -248,6 +248,7 @@ async function main(): Promise<void> {
       babyNamesQuota: 3,
       porondamQuota: 2,
       horoscopeQuota: 2,
+      dreamInterpretationQuota: 5,
       sortOrder: 1,
     },
     {
@@ -261,6 +262,7 @@ async function main(): Promise<void> {
       babyNamesQuota: 5,
       porondamQuota: 4,
       horoscopeQuota: 3,
+      dreamInterpretationQuota: 10,
       sortOrder: 2,
     },
     {
@@ -274,6 +276,7 @@ async function main(): Promise<void> {
       babyNamesQuota: 10,
       porondamQuota: 10,
       horoscopeQuota: 10,
+      dreamInterpretationQuota: 30,
       sortOrder: 3,
     },
   ] as const;
@@ -291,6 +294,7 @@ async function main(): Promise<void> {
         babyNamesQuota: pkg.babyNamesQuota,
         porondamQuota: pkg.porondamQuota,
         horoscopeQuota: pkg.horoscopeQuota,
+        dreamInterpretationQuota: pkg.dreamInterpretationQuota,
         durationDays: 30,
         isActive: true,
         sortOrder: pkg.sortOrder,
@@ -306,6 +310,7 @@ async function main(): Promise<void> {
         babyNamesQuota: pkg.babyNamesQuota,
         porondamQuota: pkg.porondamQuota,
         horoscopeQuota: pkg.horoscopeQuota,
+        dreamInterpretationQuota: pkg.dreamInterpretationQuota,
         durationDays: 30,
         isActive: true,
         sortOrder: pkg.sortOrder,

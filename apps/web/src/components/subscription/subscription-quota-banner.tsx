@@ -9,13 +9,14 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { useUi } from "@/components/providers/ui-provider";
 
 type Props = {
-  service: "babyNames" | "porondam" | "horoscope";
+  service: "babyNames" | "porondam" | "horoscope" | "dreamInterpretation";
 };
 
 const guestKey: Record<Props["service"], GuestService> = {
   babyNames: "babyNames",
   porondam: "porondam",
   horoscope: "horoscope",
+  dreamInterpretation: "dreamInterpretation",
 };
 
 export function SubscriptionQuotaBanner({ service }: Props) {
@@ -55,7 +56,9 @@ export function SubscriptionQuotaBanner({ service }: Props) {
       ? t("quotaBabyNames")
       : service === "porondam"
         ? t("quotaPorondam")
-        : t("quotaHoroscope");
+        : service === "dreamInterpretation"
+          ? t("quotaDream")
+          : t("quotaHoroscope");
 
   if (!user) {
     return (
@@ -90,13 +93,17 @@ export function SubscriptionQuotaBanner({ service }: Props) {
       ? mine.babyNamesRemaining
       : service === "porondam"
         ? mine.porondamRemaining
-        : mine.horoscopeRemaining;
+        : service === "dreamInterpretation"
+          ? mine.dreamInterpretationRemaining
+          : mine.horoscopeRemaining;
   const quota =
     service === "babyNames"
       ? mine.babyNamesQuota
       : service === "porondam"
         ? mine.porondamQuota
-        : mine.horoscopeQuota;
+        : service === "dreamInterpretation"
+          ? mine.dreamInterpretationQuota
+          : mine.horoscopeQuota;
 
   return (
     <div className="rounded-xl border border-line bg-[var(--input-bg)] px-4 py-3 text-sm text-muted">

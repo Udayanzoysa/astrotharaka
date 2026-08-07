@@ -159,6 +159,7 @@ export type SubscriptionPackage = {
   babyNamesQuota: number;
   porondamQuota: number;
   horoscopeQuota: number;
+  dreamInterpretationQuota: number;
   durationDays: number;
   isActive: boolean;
   sortOrder: number;
@@ -177,12 +178,15 @@ export type UserSubscription = {
   babyNamesQuota: number;
   porondamQuota: number;
   horoscopeQuota: number;
+  dreamInterpretationQuota: number;
   babyNamesUsed: number;
   porondamUsed: number;
   horoscopeUsed: number;
+  dreamInterpretationUsed: number;
   babyNamesRemaining: number;
   porondamRemaining: number;
   horoscopeRemaining: number;
+  dreamInterpretationRemaining: number;
   durationDays: number;
   startAt: string;
   expiresAt: string;

@@ -156,3 +156,15 @@ export interface NotifyWhatsAppJobPayload {
   guestReportId?: string;
   downloadToken?: string;
 }
+
+export {
+  FOCUS_TOPIC_IDS,
+  FOCUS_TOPIC_MAX,
+  FOCUS_TOPIC_LABELS_EN,
+  normalizeFocusTopics,
+  isFocusTopicId,
+  focusTopicLabels,
+  focusTopicsForPrompt,
+  focusTopicsPromptBlock,
+} from './focus-topics';
+export type { FocusTopicId, FocusTopicLabels } from './focus-topics';

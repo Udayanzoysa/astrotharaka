@@ -8,6 +8,8 @@ import { useUi } from "@/components/providers/ui-provider";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { WarningBanner } from "@/components/ui/warning-banner";
+import { OptionalFocusTopics } from "@/components/reports/optional-focus-topics";
+import type { FocusTopicId } from "@/lib/focus-topics";
 
 export type HoroscopeRequestBody = {
   fullName: string;
@@ -20,6 +22,8 @@ export type HoroscopeRequestBody = {
   birthPlaceName: string;
   language: Language;
   timezone: string;
+  /** Optional focus topics; omit/empty = default report. */
+  focusTopics?: string[];
 };
 
 type Props = {
@@ -80,6 +84,7 @@ export function MemberHoroscopeFlow({
     (user.profile?.preferredLanguage as Language) || language,
   );
   const [localError, setLocalError] = useState("");
+  const [focusTopics, setFocusTopics] = useState<FocusTopicId[]>([]);
 
   useEffect(() => {
     if (!accessToken || recipient !== "someone") return;
@@ -122,6 +127,7 @@ export function MemberHoroscopeFlow({
       birthPlaceName: p.birthPlaceName || "",
       language: reportLanguage,
       timezone: "Asia/Colombo",
+      focusTopics: focusTopics.length ? focusTopics : undefined,
     };
   }
 
@@ -158,6 +164,7 @@ export function MemberHoroscopeFlow({
       birthPlaceName: bp.birthPlaceName,
       language: reportLanguage,
       timezone: bp.timezone || "Asia/Colombo",
+      focusTopics: focusTopics.length ? focusTopics : undefined,
     });
   }
 
@@ -201,6 +208,7 @@ export function MemberHoroscopeFlow({
         birthPlaceName,
         language: reportLanguage,
         timezone: "Asia/Colombo",
+        focusTopics: focusTopics.length ? focusTopics : undefined,
       });
     } catch (err) {
       setLocalError(err instanceof ApiError ? err.message : "Save failed");
@@ -316,6 +324,8 @@ export function MemberHoroscopeFlow({
           </select>
         </label>
 
+        <OptionalFocusTopics value={focusTopics} onChange={setFocusTopics} compact />
+
         {displayError ? <p className="text-xs text-[var(--danger)] sm:text-sm">{displayError}</p> : null}
         <Button
           type="button"
@@ -407,6 +417,7 @@ export function MemberHoroscopeFlow({
                 <option value="ta">{t("langTa")}</option>
               </select>
             </label>
+            <OptionalFocusTopics value={focusTopics} onChange={setFocusTopics} compact />
             {displayError ? (
               <p className="text-xs text-[var(--danger)] sm:text-sm">{displayError}</p>
             ) : null}
@@ -454,6 +465,7 @@ export function MemberHoroscopeFlow({
           <option value="ta">{t("langTa")}</option>
         </select>
       </label>
+      <OptionalFocusTopics value={focusTopics} onChange={setFocusTopics} compact />
       {displayError ? <p className="text-xs text-[var(--danger)] sm:text-sm">{displayError}</p> : null}
       <Button type="submit" fullWidth disabled={busy} className={busy ? "guest-glow-btn" : ""}>
         {busy ? t("guestGenerating") : t("hadahanaGenerateCta")}

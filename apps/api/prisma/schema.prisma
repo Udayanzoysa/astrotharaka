@@ -367,6 +367,8 @@ model GuestReport {
   longitude        Float?
   timezone         String       @default("Asia/Colombo")
   language         LanguageCode @default(si)
+  /// Optional user-selected focus topics (allowlisted IDs). Empty = default report.
+  focusTopics      String[]     @default([])
   status           ReportStatus @default(QUEUED)
   title            String?
   contentText      String?
@@ -391,6 +393,7 @@ enum FreePreviewService {
   HOROSCOPE
   BABY_NAMES
   PORONDAM
+  DREAM_INTERPRETATION
 }
 
 /// Server-side one-time free preview tracking (guest cookie/IP and/or user).
@@ -432,6 +435,26 @@ model BabyNameRequest {
   status               String   @default("READY")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([publicToken])
+}
+
+/// Dream interpretation (හීන පලාපල) — public, no account required.
+model DreamInterpretation {
+  id           String   @id @default(uuid())
+  publicToken  String   @unique
+  /// User's dream text (any language / script)
+  dreamText    String
+  /// Structured AI report JSON
+  reportJson   Json?
+  category     String?
+  confidence   String?
+  aiModel      String?
+  errorMessage String?
+  status       String   @default("READY")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([createdAt])
   @@index([publicToken])
@@ -487,6 +510,7 @@ enum QuotaService {
   BABY_NAMES
   PORONDAM
   HOROSCOPE
+  DREAM_INTERPRETATION
 }
 
 /// Monthly subscription package (admin-editable). Quota changes apply to future subs only.
@@ -504,6 +528,7 @@ model SubscriptionPackage {
   babyNamesQuota  Int      @default(3)
   porondamQuota   Int      @default(2)
   horoscopeQuota  Int      @default(2)
+  dreamInterpretationQuota Int @default(5)
   /// Billing period length in days (default 30)
   durationDays    Int      @default(30)
   isActive        Boolean  @default(true)
@@ -579,6 +604,7 @@ model UserSubscription {
   babyNamesQuota       Int
   porondamQuota        Int
   horoscopeQuota       Int
+  dreamInterpretationQuota Int @default(5)
   durationDays         Int                @default(30)
   startAt              DateTime           @default(now())
   expiresAt            DateTime
@@ -606,6 +632,7 @@ model SubscriptionUsage {
   babyNamesUsed    Int      @default(0)
   porondamUsed     Int      @default(0)
   horoscopeUsed    Int      @default(0)
+  dreamInterpretationUsed Int @default(0)
   /// Cycle label e.g. 2026-07-23_2026-08-22
   monthCycle       String
   createdAt        DateTime @default(now())

@@ -33,6 +33,7 @@ export function PackageForm({ token, initial }: Props) {
       babyNamesQuota: Number(form.get("babyNamesQuota")),
       porondamQuota: Number(form.get("porondamQuota")),
       horoscopeQuota: Number(form.get("horoscopeQuota")),
+      dreamInterpretationQuota: Number(form.get("dreamInterpretationQuota")),
       durationDays: Number(form.get("durationDays") || 30),
       sortOrder: Number(form.get("sortOrder") || 0),
       isActive: form.get("isActive") === "on",
@@ -96,7 +97,7 @@ export function PackageForm({ token, initial }: Props) {
           defaultValue={String(initial?.durationDays ?? 30)}
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field
           label="Baby names quota"
           name="babyNamesQuota"
@@ -117,6 +118,13 @@ export function PackageForm({ token, initial }: Props) {
           type="number"
           required
           defaultValue={String(initial?.horoscopeQuota ?? 2)}
+        />
+        <Field
+          label="Dream interpretation quota"
+          name="dreamInterpretationQuota"
+          type="number"
+          required
+          defaultValue={String(initial?.dreamInterpretationQuota ?? 5)}
         />
       </div>
       <Field

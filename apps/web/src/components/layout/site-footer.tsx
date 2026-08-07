@@ -36,6 +36,7 @@ export function SiteFooter() {
     { href: "/#home-report", labelKey: "navHadahana" },
     { href: "/baby-names", labelKey: "babyNames" },
     { href: "/porondam", labelKey: "porondam" },
+    { href: "/dream-interpretation", labelKey: "dreamInterpretation" },
     { href: "/subscription", labelKey: "subscription" },
   ];
 

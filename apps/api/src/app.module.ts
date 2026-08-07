@@ -14,6 +14,7 @@ import { AdminModule } from './admin/admin.module';
 import { GuestReportsModule } from './guest-reports/guest-reports.module';
 import { BabyNamesModule } from './baby-names/baby-names.module';
 import { PorondamModule } from './porondam/porondam.module';
+import { DreamInterpretationsModule } from './dream-interpretations/dream-interpretations.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FreePreviewModule } from './free-preview/free-preview.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -41,6 +42,7 @@ import { BankAccountsModule } from './bank-accounts/bank-accounts.module';
     GuestReportsModule,
     BabyNamesModule,
     PorondamModule,
+    DreamInterpretationsModule,
     SubscriptionsModule,
     FreePreviewModule,
   ],

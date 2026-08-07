@@ -324,6 +324,7 @@ async function handleGuestReport(job: Job<GuestReportJobPayload>): Promise<unkno
       unknownBirthTime: guest.unknownBirthTime,
       orderNumber,
       fullReport,
+      focusTopics: Array.isArray(guest.focusTopics) ? guest.focusTopics : [],
       chart,
     });
 

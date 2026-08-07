@@ -26,6 +26,8 @@ export type NarrativeInput = {
   orderNumber: string;
   /** When true, generate the full Tharaka JSON subscription report (not guest teaser). */
   fullReport?: boolean;
+  /** Optional user-selected focus topics (allowlisted IDs). Empty = default report. */
+  focusTopics?: string[];
   chart: ChartResult;
 };
 

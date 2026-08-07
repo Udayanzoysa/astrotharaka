@@ -1,3 +1,4 @@
+import { focusTopicsPromptBlock } from '@astro/shared';
 import type { NarrativeSection } from './types';
 import { normalizeNarrativeBody } from '../pdf/format-narrative';
 
@@ -237,7 +238,7 @@ export function isFullReportNarrative(input: {
   return input.productSlug === 'guest-full' || input.productSlug === 'taraka-full';
 }
 
-export function fullReportSystemPrompt(language: string): string {
+export function fullReportSystemPrompt(language: string, focusTopics?: string[]): string {
   const brand = brandFor(language);
   const langBlock =
     language === 'si'
@@ -248,11 +249,12 @@ export function fullReportSystemPrompt(language: string): string {
       : language === 'ta'
         ? 'Write warm, clear, formal Tamil suitable for a classical Jathaka report.'
         : 'Write warm, clear, formal English suitable for a classical Sri Lankan Vedic full horoscope.';
+  const focusBlock = focusTopicsPromptBlock(focusTopics, language);
 
   return `You are an elite veteran Sri Lankan Vedic astrologer representing "${brand}".
 
 ${langBlock}
-
+${focusBlock ? `\n${focusBlock}\n` : ''}
 STYLE (match traditional Sri Lankan Taraka printout PDF):
 - Formal jathaka tone: respectful, analytical, hopeful — never harsh or fear-mongering.
 - introduction: open with the EXACT salutation provided in the user JSON (openingLine / salutation.promptHint), then welcome from "${brand}", then a holistic overview of the native's chart destiny.
@@ -324,11 +326,19 @@ Required JSON shape:
 }`;
 }
 
-export function fullReportUserPrompt(payload: unknown, language: string): string {
+export function fullReportUserPrompt(
+  payload: unknown,
+  language: string,
+  focusTopics?: string[],
+): string {
   const brand = brandFor(language);
+  const focusHint =
+    focusTopics && focusTopics.length > 0
+      ? ' Deepen the selected focusTopics from the JSON without omitting required fields.'
+      : '';
   const hint =
     language === 'si'
       ? `සම්පූර්ණ JSON වාර්තාව ලියන්න (මූලික උපන් සිතියම් වාර්තාව). කියවීමට පහසු ව්‍යුහය අනිවාර්යයි: එක් එක් කොටසේ කෙටි ඡේද + ### උප ශීර්ෂ + "- " බුලට් ලැයිස්තු. එක දිගු ඡේදයක් ලෙස නොලියන්න. හැඳින්වීමේදී openingLine / salutation භාවිතා කරන්න. යෝග, ධනය/ඉඩම්, අධ්‍යාපනය, රැකියා, ව්‍යාපාර, ආදායම්/පාඩු, මාස 12 ගෝචර, වසර 25 දශා කාලරේඛාව ගැඹුරින් ලියන්න. health, main_weaknesses, health_remedies වෙන වෙනම අනිවාර්යයි. හැඳින්වීමේ සහ අවසානයේ "${brand}" සඳහන් කරන්න.`
       : `Write the complete JSON "Basic Birth Chart Report". REQUIRED readability structure in EVERY field: short paragraphs + ### sub-headers + "- " bullet lists (never one dense wall of text). MUST use openingLine/salutation in introduction. Deeply cover yogas, wealth/property, education/mind, careers, businesses, income/losses, 12-month gochara, and ~25-year dasha timeline. "health", "main_weaknesses", and "health_remedies" must be three SEPARATE required fields. Mention "${brand}" in introduction and conclusion.`;
-  return `${hint}\n${JSON.stringify(payload)}`;
+  return `${hint}${focusHint}\n${JSON.stringify(payload)}`;
 }

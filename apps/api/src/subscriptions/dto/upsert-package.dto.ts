@@ -45,6 +45,10 @@ export class UpsertSubscriptionPackageDto {
   @Min(0)
   horoscopeQuota!: number;
 
+  @IsInt()
+  @Min(0)
+  dreamInterpretationQuota!: number;
+
   @IsOptional()
   @IsInt()
   @Min(1)

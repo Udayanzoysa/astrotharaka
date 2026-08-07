@@ -174,6 +174,7 @@ export function SiteHeader() {
     { href: "/#home-report", label: horoscopeLabel, accent: true },
     { href: "/baby-names", label: t("babyNames") },
     { href: "/porondam", label: t("porondam") },
+    { href: "/dream-interpretation", label: t("dreamInterpretation") },
     { href: "/shop", label: t("availableServices") },
   ];
 

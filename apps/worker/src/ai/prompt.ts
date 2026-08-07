@@ -1,3 +1,4 @@
+import { focusTopicsPromptBlock } from '@astro/shared';
 import type { NarrativeSection } from './types';
 import {
   fullReportSystemPrompt,
@@ -142,7 +143,7 @@ export function compactGuestChart(chart: {
   };
 }
 
-export function guestNarrativeSystemPrompt(language: string): string {
+export function guestNarrativeSystemPrompt(language: string, focusTopics?: string[]): string {
   const titles = guestSectionTitles(language);
   const outline = titles.map((t, i) => `${i + 1}. ## ${t}`).join('\n');
   const langLine =
@@ -151,6 +152,7 @@ export function guestNarrativeSystemPrompt(language: string): string {
       : language === 'ta'
         ? 'Write warm natural Tamil. Minimal English.'
         : 'Write warm conversational English.';
+  const focusBlock = focusTopicsPromptBlock(focusTopics, language);
 
   return `You are an expert Vedic astrologer for Taraka.
 ${langLine}
@@ -170,17 +172,25 @@ FIRST PARAGRAPH RULE (each section):
 - Keep it precise, impactful, easy to read (2–4 sentences).
 - Paragraph 2 = slightly deeper locked detail (timing / house notes). Still concise.
 
-TOKEN LIMIT: ~350–550 words total. No filler. No extra sections.`;
+${focusBlock ? `${focusBlock}\n` : ''}TOKEN LIMIT: ~350–550 words total. No filler. No extra sections.`;
 }
 
-export function guestNarrativeUserPrompt(payload: unknown, language?: string): string {
+export function guestNarrativeUserPrompt(
+  payload: unknown,
+  language?: string,
+  focusTopics?: string[],
+): string {
   const langHint =
     language === 'si'
       ? 'සිංහලෙන් පමණයි. සාරාංශය පළමු ඡේදයේ.'
       : language === 'ta'
         ? 'தமிழில் மட்டும். முதல் பத்தி சுருக்கம்.'
         : 'First para = summary.';
-  return `Write guest natal report from JSON. Exact ## headings. 2 paras/section. ${langHint}
+  const focusHint =
+    focusTopics && focusTopics.length > 0
+      ? ' Deepen the selected focusTopics from JSON.'
+      : '';
+  return `Write guest natal report from JSON. Exact ## headings. 2 paras/section. ${langHint}${focusHint}
 ${JSON.stringify(payload)}`;
 }
 
@@ -197,6 +207,7 @@ export function buildNarrativePrompts(input: {
   unknownBirthTime: boolean;
   orderNumber: string;
   fullReport?: boolean;
+  focusTopics?: string[];
   chart: {
     lagna: { sign: string; degree: number };
     planets: Array<{
@@ -214,6 +225,7 @@ export function buildNarrativePrompts(input: {
   };
 }): { system: string; user: string; maxOutputTokens: number; jsonMode: boolean; temperature: number } {
   const lang = String(input.language);
+  const focusTopics = input.focusTopics ?? [];
 
   if (isFullReportNarrative(input)) {
     const salutation = buildSalutation({
@@ -223,7 +235,7 @@ export function buildNarrativePrompts(input: {
       language: lang,
     });
     return {
-      system: fullReportSystemPrompt(lang),
+      system: fullReportSystemPrompt(lang, focusTopics),
       user: fullReportUserPrompt(
         {
           name: input.fullName,
@@ -239,9 +251,11 @@ export function buildNarrativePrompts(input: {
           salutation: {
             promptHint: salutation.promptHint,
           },
+          focusTopics: focusTopics.length ? focusTopics : undefined,
           chart: compactGuestChart(input.chart),
         },
         lang,
+        focusTopics,
       ),
       maxOutputTokens: 16384,
       jsonMode: true,
@@ -251,7 +265,7 @@ export function buildNarrativePrompts(input: {
 
   if (isGuestNarrative(input.productSlug)) {
     return {
-      system: guestNarrativeSystemPrompt(lang),
+      system: guestNarrativeSystemPrompt(lang, focusTopics),
       user: guestNarrativeUserPrompt(
         {
           name: input.fullName,
@@ -259,9 +273,11 @@ export function buildNarrativePrompts(input: {
           place: input.birthPlace,
           date: input.birthDate,
           unknownTime: input.unknownBirthTime,
+          focusTopics: focusTopics.length ? focusTopics : undefined,
           chart: compactGuestChart(input.chart),
         },
         lang,
+        focusTopics,
       ),
       maxOutputTokens: 3072,
       jsonMode: false,
