@@ -59,16 +59,188 @@ function getBannerBuffer(dayOfWeek?: number): { buffer: Buffer; fileName: string
 }
 
 
+interface DaySpecificTheme {
+  greeting: string;
+  intro: string;
+  thought: string;
+  wish: string;
+}
+
+const DAY_SPECIFIC_THEMES: Record<number, DaySpecificTheme[]> = {
+  // 0: Sunday (ඉරිදා) - Relaxation, family, gratitude, positivity, preparation for coming week
+  0: [
+    {
+      greeting: "සුබ ඉරිදා දිනයක් වේවා!",
+      intro: "පවුලේ ආදරණීයයන් සමඟ සතුටින් කාලය ගත කරමින් මනස සැහැල්ලු කරගන්න අද ඔබට හොඳම දිනයකි. ලැබූ විවේකය තුළින් නව සතියකට අවශ්‍ය ධනාත්මක ශක්තිය හා ප්‍රබෝධය සිතට එක්කර ගන්න.",
+      thought: "සිත නිදහස් කරගන්නා මොහොතක් තුළින් ජීවිතයට අලුත් බලාපොරොත්තු රාශියක් උපදී.",
+      wish: "පවුලේ සැමට සාමය, සතුට පිරි සුන්දර ඉරිදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "සැනසිලිදායක, සුන්දර ඉරිදා දිනයක් වේවා!",
+      intro: "කාර්යබහුලත්වයෙන් මිදී සිතට සැනසීම ළඟා කරගන්නා සුන්දර දිනයක් අද උදා වී තිබේ. අද දවසේ සුළු මොහොතක් හෝ ඔබේ සතුට හා පවුලේ සැනසීම වෙනුවෙන් වෙන් කරන්න.",
+      thought: "සැබෑ සතුට රැඳී ඇත්තේ නිහඬ සැනසීම සහ ආදරණීය බැඳීම් තුළයි.",
+      wish: "සැනසිලිදායක සිතුවිලි පිරි ප්‍රීතිමත් ඉරිදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "ප්‍රීතිමත් ඉරිදා උදෑසනක් වේවා!",
+      intro: "ගත වූ දිනවල අත්දැකීම් අගය කරමින්, සිතේ සන්සුන් බව රඳවා ගැනීමට ඉඩ සලසා ගන්න. නිස්කලංක මනසක් තුළින් අනාගතය දෙස වඩාත් පැහැදිලිව හා බලාපොරොත්තු සහගතව බැලිය හැක.",
+      thought: "විවේකය යනු කම්මැලිවීම නොව, නව ජවයකින් නැවත නැගී සිටීමට මනස සූදානම් කරගැනීමයි.",
+      wish: "නව සතියකට ආශීර්වාද එක්වන සුබ ඉරිදා දිනයක් වේවා!",
+    },
+  ],
+  // 1: Monday (සඳුදා) - Welcome beginning of new week, fresh starts, new goals, hope and confidence
+  1: [
+    {
+      greeting: "සුබ නව සතියක ආරම්භයක් වේවා!",
+      intro: "අලුත් බලාපොරොත්තු සහ නැවුම් ඉලක්ක සමඟින් අද නව සතියක් ආරම්භ වේ. ඔබේ සිහින ජයගැනීමට නව ජවයකින් හා නොසැලෙන ආත්ම විශ්වාසයෙන් යුතුව අද දවස අරඹන්න.",
+      thought: "සෑම නව ආරම්භයක්ම අලුත් අවස්ථාවන් රැගෙන එයි; ධෛර්යයෙන් ඉදිරියට යන ඔබට ජය නියතයි.",
+      wish: "ඔබ සැමට සාර්ථක, සතුට සපිරි නව සතියක් වේවා!",
+    },
+    {
+      greeting: "ප්‍රබෝධමත් සුබ සඳුදා දිනයක් වේවා!",
+      intro: "නව සතියක උදාව ඔබේ ජීවිතයට අලුත් අවස්ථාවන් සහ ආශීර්වාද රැගෙන එනු ඇත. පියවරෙන් පියවර ඔබේ අරමුණු කරා ළඟාවීමට අද දවසේ මනස ධනාත්මකව තබාගන්න.",
+      thought: "ඔබ තබන සෑම කුඩා ධනාත්මක පියවරක්ම විශිෂ්ට ජයග්‍රහණයක ආරම්භය විය හැක.",
+      wish: "ඉලක්ක සපිරෙන ජයග්‍රාහී සුබ සඳුදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "ජයග්‍රාහී නව සතියකට සුබ පැතුම්!",
+      intro: "සෑම සඳුදාවකම ඇත්තේ අලුත් ආරම්භයක සුන්දරත්වයයි. පසුගිය අභියෝග අමතක කර නැවුම් බලාපොරොත්තුවකින් යුතුව ඔබේ සතියේ මුල් පියවර තබන්න.",
+      thought: "ආත්ම විශ්වාසය යනු ඕනෑම අභියෝගයක් ජයගැනීමට මිනිසා සතු බලවත්ම ශක්තියයි.",
+      wish: "නැවුම් බලාපොරොත්තු සැබෑ වන සුබ නව සතියක් වේවා!",
+    },
+  ],
+  // 2: Tuesday (අඟහරුවාදා) - Courage, energy, determination, overcoming challenges
+  2: [
+    {
+      greeting: "සුබ අඟහරුවාදා දිනයක් වේවා!",
+      intro: "ජීවිතයට එන ඕනෑම අභියෝගයකට නොබියව මුහුණ දීමට අද දවසේ ශක්තිය සහ ධෛර්යය ඔබේ සිත තුළ ගොඩනගා ගන්න. නොසැලෙන අධිෂ්ඨානය ඔබේ ගමන පහසු කරනු ඇත.",
+      thought: "අභියෝග යනු ඔබේ සැබෑ ශක්තිය හඳුනාගැනීමට ලැබෙන වටිනා අවස්ථාවන්ය.",
+      wish: "බාධක ජයගන්නා ශක්තිමත්, ඵලදායී දිනයක් වේවා!",
+    },
+    {
+      greeting: "ධෛර්යවන්ත සුබ අඟහරුවාදා දිනයක් වේවා!",
+      intro: "සිතේ ඇති ශක්තිය ක්‍රියාවට නංවමින් බාධක මැදින් ඉදිරියට යන්න අද දවස සුදුසුය. කැපවීම සහ නොපසුබස්නා උත්සාහය තුළින් ඔබේ දවසේ කාර්යයන් සාර්ථක කරගන්න.",
+      thought: "නොසැලෙන අධිෂ්ඨානයක් ඇති තැන ඕනෑම දුෂ්කර මාවතක් පහසු මාවතක් බවට පත්වේ.",
+      wish: "ධෛර්යය හා ජයග්‍රහණය සපිරි සුබ අඟහරුවාදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "ජවය පිරි සුබ අඟහරුවාදා දිනයක් වේවා!",
+      intro: "අභියෝග හමුවේ නොසැලී සිටින පුද්ගලයාට ජීවිතය සැමවිටම ජයග්‍රහණ උරුම කරදෙයි. පූර්ණ ශක්තියෙන් යුතුව අද දවසේ අරමුණු වෙනුවෙන් කැපවන්න.",
+      thought: "ධෛර්යය යනු බිය නැතිවීම නොව, බිය මැද වුවද ඉදිරියට යාමට ඇති සූදානමයි.",
+      wish: "නිරෝගී සුවය හා මානසික ශක්තිය පිරි දිනයක් වේවා!",
+    },
+  ],
+  // 3: Wednesday (බදාදා) - Knowledge, smart decisions, patience, personal growth
+  3: [
+    {
+      greeting: "සුබ බදාදා දිනයක් වේවා!",
+      intro: "නුවණින් සහ බුද්ධිමත්ව තීරණ ගැනීමට අද දවස ඔබට මනා පිටුවහලක් වනු ඇත. ඉවසීමෙන් හා විමසිල්ලෙන් කරන සෑම කාර්යයක්ම ඔබේ පෞද්ගලික දියුණුවට මග පාදයි.",
+      thought: "ඉවසීමෙන් හා නුවණින් ගන්නා නිවැරදි තීරණ ජීවිතය නිසැකවම යහපත් මාවතකට යොමු කරයි.",
+      wish: "ඥානය හා සාර්ථකත්වය පිරි සුබ දිනයක් වේවා!",
+    },
+    {
+      greeting: "ඥානවන්ත සුබ බදාදා දිනයක් වේවා!",
+      intro: "සතියේ මැද දිනය වන අද, ඔබේ සැලසුම් නැවත විමසා බලා වඩාත් නිවැරදි මාවත තෝරාගැනීමට සුදුසු කාලයකි. බුද්ධියෙන් කරන කාර්යයන් සාර්ථක ප්‍රතිඵල ගෙනදෙයි.",
+      thought: "දැනුම සහ අවබෝධය තුළින් ජීවිතයේ අසීරු ගැටලු පවා ඉතා සරලව විසඳාගත හැක.",
+      wish: "නිවැරදි තීරණ තුළින් ජය ලබන සුබ බදාදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "ප්‍රඥාව සපිරි සුබ බදාදා දිනයක් වේවා!",
+      intro: "අලුත් දැනුම ලබාගැනීමටත්, අන් අය සමඟ සුහදව සහයෝගයෙන් කටයුතු කිරීමටත් අද දවස යොදාගන්න. ඉවසිලිවන්ත බව ඔබේ ජීවිතයේ ලොකුම ශක්තියයි.",
+      thought: "ඉවසීම යනු නිහඬව බලා සිටීම නොව, කාලෝචිතව නිවැරදි දෙය කිරීමේ කලාවයි.",
+      wish: "සාමය හා මානසික පැහැදිලිකම පිරි සුබ දිනයක් වේවා!",
+    },
+  ],
+  // 4: Thursday (බ්‍රහස්පතින්දා) - Gratitude, progress, opportunities, prosperity
+  4: [
+    {
+      greeting: "සුබ බ්‍රහස්පතින්දා දිනයක් වේවා!",
+      intro: "ඔබ අත්පත් කරගත් දේ ගැන කෘතඥ වෙමින්, ඉදිරි ජීවිතයට ලැබෙන නව අවස්ථා විවෘත මනසින් වැළඳගන්න. කැපවීමෙන් වැඩ කරන ඔබට සෞභාග්‍යය හා දියුණුව ළඟා වේ.",
+      thought: "කෘතඥපූර්වක සිතක් ඇති තැනට සෑම විටම යහපත හා සෞභාග්‍යය ගලා එයි.",
+      wish: "සෞභාග්‍යය හා ප්‍රගතිය සපිරි සුබ දිනයක් වේවා!",
+    },
+    {
+      greeting: "සෞභාග්‍යමත් සුබ බ්‍රහස්පතින්දා දිනයක් වේවා!",
+      intro: "ජීවිතයේ ප්‍රගතිය උදෙසා ලැබෙන සුබදායී අවස්ථා හඳුනාගෙන ඒවායින් උපරිම ප්‍රයෝජන ගැනීමට අද දවස ඔබට ආශීර්වාදයක් වනු ඇත. උදාර සිතුවිලි සිත තුළ රඳවාගන්න.",
+      thought: "අවස්ථාවන් පැමිණෙන තෙක් නොසිට, ඔබේ උත්සාහයෙන්ම නව අවස්ථාවන් නිර්මාණය කරගන්න.",
+      wish: "ආශීර්වාද හා සතුට පිරි සුබ බ්‍රහස්පතින්දා දිනයක් වේවා!",
+    },
+    {
+      greeting: "ආශීර්වාද සපිරි සුබ බ්‍රහස්පතින්දා දිනයක් වේවා!",
+      intro: "කෘතඥතාවයෙන් පිරි සිතක් ඇතිව අද දවස ගත කරන්න. ඔබේ හැකියාවන් කෙරෙහි විශ්වාසය තබා ඉදිරියට තබන සෑම පියවරකදීම යහපත් ප්‍රතිඵල අත්කරගත හැක.",
+      thought: "සැබෑ ප්‍රගතිය යනු ඊයේට වඩා අද ඔබ තබන එක ධනාත්මක පියවරකි.",
+      wish: "සිතූ පැතූ දේ සාර්ථක වන සුබ දිනයක් වේවා!",
+    },
+  ],
+  // 5: Friday (සිකුරාදා) - Happiness, love, peace, appreciating achievements
+  5: [
+    {
+      greeting: "සුබ සිකුරාදා දිනයක් වේවා!",
+      intro: "සතිය පුරා ඔබ කළ කැපවීම් අගය කරමින්, සිතේ සාමය හා සතුට රඳවා ගැනීමට අද දවස යොදාගන්න. ආදරය සහ සුහදත්වය පිරි පරිසරයක් ඔබ අවට නිර්මාණය කරගන්න.",
+      thought: "සිතේ සාමය සහ සතුට රැඳෙන්නේ අප අන් අයට දක්වන ආදරය හා කරුණාව තුළයි.",
+      wish: "ආදරය, සතුට හා සාමය පිරි සුබ සිකුරාදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "සාමකාමී, සුන්දර සිකුරාදා දිනයක් වේවා!",
+      intro: "වෙහෙසකර සතියක නිමාව සනිටුහන් කරමින් සිතට සැනසිලිදායක සිතුවිලි එක්කර ගැනීමට සුදුසුම දිනයකි. සතුට සහ සැනසීම ඔබේ සමීපතමයන් සමඟ බෙදාගන්න.",
+      thought: "ජීවිතයේ සුන්දරම දේ නම් ආදරය, සතුට හා අභ්‍යන්තර සාමකාමී බවයි.",
+      wish: "සැනසිලිදායක, ප්‍රීතිමත් සිකුරාදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "ආදරණීය සුබ සිකුරාදා දිනයක් වේවා!",
+      intro: "සතිය තුළ අත්පත් කරගත් සාර්ථකත්වයන් ගැන සතුටු වෙමින් සති අන්තයට සැහැල්ලුවෙන් සූදානම් වන්න. කරුණාවන්ත සිතුවිලි ඔබේ දවස තවත් ආලෝකමත් කරනු ඇත.",
+      thought: "සතුට සෙවිය යුත්තේ බාහිරින් නොව, අප තුළ ඇති යහපත් සිතුවිලි තුළිනි.",
+      wish: "සති අන්තයට සතුට රැගෙන එන සුබ දිනයක් වේවා!",
+    },
+  ],
+  // 6: Saturday (සෙනසුරාදා) - Discipline, persistence, personal development, balance
+  6: [
+    {
+      greeting: "සුබ සෙනසුරාදා දිනයක් වේවා!",
+      intro: "ජීවිතයේ සමබරතාවය ආරක්ෂා කරගනිමින් ඔබේ පෞද්ගලික දියුණුවට සහ අනාගත සැලසුම්වලට කාලය වෙන් කරන්න. විනය හා නොපසුබට උත්සාහය ඔබේ සිහින සැබෑ කරයි.",
+      thought: "විනයගරුක බව සහ නොපසුබස්නා උත්සාහය අසීරු ඉලක්ක පවා පහසුවෙන් ජයග්‍රහණය කරවයි.",
+      wish: "සැනසිලිදායක, අර්ථවත් සති අන්තයක ඇරඹුමක් වේවා!",
+    },
+    {
+      greeting: "විනයගරුක සුබ සෙනසුරාදා දිනයක් වේවා!",
+      intro: "සති අන්තයේ ආරම්භයත් සමඟ ඔබේ ජීවිතයේ ප්‍රමුඛතා නැවත හඳුනාගෙන, ආත්ම දමනය හා නොසැලෙන කැපවීමෙන් ඉදිරි කටයුතු සැලසුම් කරගැනීමට අද සුදුසු දිනයකි.",
+      thought: "අද දවසේ ඔබ කරන සැලසුම් හෙට දවසේ ඔබේ ජයග්‍රහණයේ පදනම වේ.",
+      wish: "ප්‍රතිඵලදායක, යහපත් සුබ සෙනසුරාදා දිනයක් වේවා!",
+    },
+    {
+      greeting: "අර්ථවත් සුබ සෙනසුරාදා දිනයක් වේවා!",
+      intro: "නොපසුබට උත්සාහයෙන් යුතුව තම අරමුණු වෙනුවෙන් වැඩ කරන අයට සාර්ථකත්වය හිමිවේ. ඔබේ කාලය ඵලදායීව හා අර්ථවත්ව ගත කරන්න.",
+      thought: "කැපවීම සහ විනය ඇති මිනිසාට කිසිදු බාධකයක් ජයගත නොහැකි නොවේ.",
+      wish: "සිතට ශක්තිය හා සැනසීම ගෙනෙන සුබ දිනයක් වේවා!",
+    },
+  ],
+};
+
 function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: string): string {
-  const dateDisplay =
-    (typeof horoscopeData.dateDisplay === "object"
-      ? horoscopeData.dateDisplay?.si
-      : horoscopeData.dateDisplay) || slstDateStr;
+  // Parse year, month, day to compute day-of-week and rotation index
+  const [yearNum, monthNum, dayNum] = slstDateStr.split("-").map((v) => parseInt(v, 10) || 1);
+  const parsedDate = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
+  const dayOfWeek = parsedDate.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const dayOfMonth = dayNum;
+
+  const dayVariants = DAY_SPECIFIC_THEMES[dayOfWeek] || DAY_SPECIFIC_THEMES[1];
+  const variantIndex = (dayOfMonth + Math.floor(dayOfMonth / 7)) % dayVariants.length;
+  const currentTheme = dayVariants[variantIndex];
 
   const lines: string[] = [
-    "🌟🔮 අද දවස ඔබේ ලග්නයට කොහොමද?",
-    `📅 ${dateDisplay}`,
-    "✨ ආදරය, රැකියාව, මුදල් සහ ජීවිතයේ කටයුතු ගැන අද දවසේ ලග්න පලාපල මෙන්න!",
+    "🌟 අද දවස ඔබේ ලග්නයට කොහොමද?",
+    "",
+    `🌸 ${currentTheme.greeting}`,
+    "",
+    currentTheme.intro,
+    "",
+    "✨ අද දවසේ සිතුවිල්ල",
+    "",
+    `“${currentTheme.thought}”`,
+    "",
+    "අලුත් දවසක් සමඟ ඔබේ ජීවිතයට මොන වගේ අවස්ථා සහ අභියෝග ඇති වේවිද?",
+    "ආදරය, රැකියාව, අධ්යාපනය, මුදල්, ව්යාපාර සහ පවුල් ජීවිතය පිළිබඳ සාම්ප්රදායික ජ්යෝතිෂ අනාවැකි ඇසුරින් අද දවසේ ලග්න පලාපල මෙන්න.",
+    "ඔබේ ලග්නයට අද දවස කොහොමද කියලා බලමු!",
     "",
   ];
 
@@ -94,6 +266,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
     code: string;
     symbol: string;
     nameSi: string;
+    nameEn: string;
     fallbackPrediction: string;
     fallbackColor: string;
     fallbackNumber: string;
@@ -102,6 +275,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "aries",
       symbol: "♈",
       nameSi: "මේෂ",
+      nameEn: "Aries",
       fallbackPrediction: "රැකියා සහ ව්‍යාපාර කටයුතුවල අලුත් උනන්දුවක් ඇතිවිය හැකියි. ප්‍රමාද වූ වැඩ අවසන් කිරීමට උත්සාහ කරන්න. හදිසි තීරණ සහ අනවශ්‍ය වියදම්වලින් වළකින්න.",
       fallbackColor: "රතු",
       fallbackNumber: "09",
@@ -110,6 +284,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "taurus",
       symbol: "♉",
       nameSi: "වෘෂභ",
+      nameEn: "Taurus",
       fallbackPrediction: "ඉවසීමෙන් වැඩ කිරීමෙන් යහපත් ප්‍රතිඵල ලබාගත හැකියි. පවුලේ සමගියට මුල් තැන දෙන්න. ආදායමෙන් කොටසක් ඉතිරි කිරීමට සුදුසු දිනයක්.",
       fallbackColor: "සුදු",
       fallbackNumber: "06",
@@ -118,6 +293,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "gemini",
       symbol: "♊",
       nameSi: "මිථුන",
+      nameEn: "Gemini",
       fallbackPrediction: "අලුත් සබඳතා සහ අදහස් ඔබට ප්‍රයෝජනවත් විය හැකියි. රැකියාවේදී අදහස් පැහැදිලිව ඉදිරිපත් කරන්න. එකවර වැඩ රැසක් ආරම්භ කිරීමෙන් වළකින්න.",
       fallbackColor: "කොළ",
       fallbackNumber: "05",
@@ -126,6 +302,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "cancer",
       symbol: "♋",
       nameSi: "කටක",
+      nameEn: "Cancer",
       fallbackPrediction: "පවුලේ වගකීම් වෙනුවෙන් වැඩි අවධානයක් යොමු කිරීමට සිදුවිය හැකියි. සමීප අය සමඟ සුහදව කටයුතු කරන්න. මුදල් ගනුදෙනුවලදී සැලකිලිමත් වන්න.",
       fallbackColor: "සුදු",
       fallbackNumber: "02",
@@ -134,6 +311,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "leo",
       symbol: "♌",
       nameSi: "සිංහ",
+      nameEn: "Leo",
       fallbackPrediction: "නායකත්ව ගුණාංග විදහා දැක්වීමට අවස්ථාව සැලසේ. ආත්ම විශ්වාසයෙන් වැඩකටයුතු කරන්න. අන්‍යන්ගේ අදහස්වලටද ගරු කරන්න.",
       fallbackColor: "රන්වන් කහ",
       fallbackNumber: "01",
@@ -142,6 +320,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "virgo",
       symbol: "♍",
       nameSi: "කන්‍යා",
+      nameEn: "Virgo",
       fallbackPrediction: "සැලසුම් සහගතව කටයුතු කිරීමෙන් බලාපොරොත්තු ඉටු වේ. විස්තරාත්මක කාර්යයන් සාර්ථකව නිම කළ හැක. අධික විවේචනයෙන් වළකින්න.",
       fallbackColor: "කොළ",
       fallbackNumber: "05",
@@ -150,6 +329,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "libra",
       symbol: "♎",
       nameSi: "තුලා",
+      nameEn: "Libra",
       fallbackPrediction: "හවුල් ව්‍යාපාර සහ සබඳතා වඩාත් ශක්තිමත් වේ. සාමකාමී පරිසරයක සිත සැහැල්ලුවෙන් තබාගන්න. මූල්‍ය තීරණ සමබරව ගන්න.",
       fallbackColor: "ලා නිල්",
       fallbackNumber: "06",
@@ -158,6 +338,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "scorpio",
       symbol: "♏",
       nameSi: "වෘශ්චික",
+      nameEn: "Scorpio",
       fallbackPrediction: "සැඟවුණු හැකියාවන් ඉස්මතු වන දිනයකි. නොසැලෙන අධිෂ්ඨානයෙන් බාධක ජයගත හැක. ඉක්මන් කෝපය පාලනය කරගන්න.",
       fallbackColor: "තද රතු",
       fallbackNumber: "09",
@@ -166,6 +347,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "sagittarius",
       symbol: "♐",
       nameSi: "ධනු",
+      nameEn: "Sagittarius",
       fallbackPrediction: "නව ඉගෙනුම් හා ගමන් බිමන්වලට සුබයි. දූරදර්ශී අදහස් තුළින් සාර්ථකත්වය අත්වේ. අධික වියදම් සීමා කරන්න.",
       fallbackColor: "කහ",
       fallbackNumber: "03",
@@ -174,6 +356,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "capricorn",
       symbol: "♑",
       nameSi: "මකර",
+      nameEn: "Capricorn",
       fallbackPrediction: "වෘත්තීය ඉලක්ක සපුරාගැනීමට කැපවීම ප්‍රයෝජනවත් වේ. ඉවසීමෙන් කටයුතු කරන්න. වැඩිහිටියන්ගේ අවවාද පිළිපදින්න.",
       fallbackColor: "තද නිල්",
       fallbackNumber: "08",
@@ -182,6 +365,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "aquarius",
       symbol: "♒",
       nameSi: "කුම්භ",
+      nameEn: "Aquarius",
       fallbackPrediction: "නව අදහස් හා නවෝත්පාදන තුළින් සමාජයේ ප්‍රසාදය ලැබේ. මිතුරු ඇසුරින් උපකාර හිමිවේ. අනවශ්‍ය කරදරවලට මැදි නොවන්න.",
       fallbackColor: "අළු හෝ නිල්",
       fallbackNumber: "08",
@@ -190,6 +374,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       code: "pisces",
       symbol: "♓",
       nameSi: "මීන",
+      nameEn: "Pisces",
       fallbackPrediction: "අධ්‍යාත්මික සහන හා මනසේ සතුට වර්ධනය වේ. නිර්මාණශීලී කටයුතුවලින් ප්‍රතිඵල ලැබේ. ප්‍රායෝගිකව තීරණ ගන්න.",
       fallbackColor: "කහ",
       fallbackNumber: "03",
@@ -224,6 +409,7 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
 
     const symbol = (p?.symbol as string) || def.symbol;
     const nameSi = (p?.nameSi as string) || (p?.lagnaName as string) || def.nameSi;
+    const nameEn = (p?.nameEn as string) || def.nameEn;
 
     const summaryText = extractText(p?.summary);
     const careerText = extractText(p?.career);
@@ -244,32 +430,29 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
       luckyNumber = `0${luckyNumber}`;
     }
 
-    let colorDot = "🔴";
-    if (luckyColor.includes("සුදු")) colorDot = "⚪";
-    else if (luckyColor.includes("කොළ")) colorDot = "🟢";
-    else if (luckyColor.includes("කහ") || luckyColor.includes("රන්වන්")) colorDot = "🟡";
-    else if (luckyColor.includes("නිල්")) colorDot = "🔵";
-    else if (luckyColor.includes("තැඹිලි")) colorDot = "🟠";
-    else if (luckyColor.includes("දම්")) colorDot = "🟣";
-    else if (luckyColor.includes("රතු")) colorDot = "🔴";
-
-    lines.push(`${symbol} ${nameSi} ලග්නය`);
+    lines.push(`${symbol} ${nameSi} ලග්නය (${nameEn})`);
     lines.push(prediction);
-    lines.push(`${colorDot} සුබ වර්ණය: ${luckyColor}`);
-    lines.push(`🔢 ජය අංකය: ${luckyNumber}`);
+    lines.push(`සුබ වර්ණය: ${luckyColor}`);
+    lines.push(`ජය අංකය: ${luckyNumber}`);
     lines.push("");
   }
 
-  lines.push("🎁🔮 ඔබේ කේන්දරය නොමිලේ බලාගන්න!");
-  lines.push("ඔබේ උපන් දිනය, වේලාව සහ ස්ථානය අනුව කේන්දරය සහ ග්‍රහ පිහිටීම් ගැන දැනගන්න.");
-  lines.push("🌐 https://astrotharaka.com");
-  lines.push("");
-  lines.push("💬 ඔබේ ලග්නය මොකක්ද? ♈♉♊");
-  lines.push("👇 Comment කරන්න! ඔබේ ලග්නයට අද දවසේ පලාපල ගැළපෙනවාද කියලත් අපට කියන්න. ❤️");
-  lines.push("");
-  lines.push("🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු! ✨");
+  lines.push("🔮 අද දවසේ ඔබේ ලග්නය ගැන තවත් විස්තර දැනගන්න!");
   lines.push(
-    "#AstroTharaka #DailyHoroscope #AstrologyLK #LagnaPalapala #SinhalaAstrology #ජ්‍යෝතිෂය #අදලග්නපලාපල #කේන්දරය #SriLanka"
+    "ඔබේ ලග්නයට අදාළ සම්පූර්ණ දෛනික පලාපල, පංචාංග තොරතුරු සහ පසුගිය හෝ ඉදිරි දිනවල ජ්යෝතිෂ අනාවැකි දැනගැනීමට Astro Tharaka වෙබ් අඩවියට පිවිසෙන්න."
+  );
+  lines.push("🌐 https://astrotharaka.com/daily-horoscope");
+  lines.push("ඔබේ ලග්නය තෝරා “පලාපල බලන්න” යන්න මත Click කරන්න.");
+  lines.push("ඔබේ කේන්දරය නොමිලේ බලාගන්න!");
+  lines.push("ඔබේ උපන් දිනය, වේලාව සහ ස්ථානය අනුව කේන්දරය සහ ග්රහ පිහිටීම් ගැන දැනගන්න.");
+  lines.push("🌐 https://astrotharaka.com");
+  lines.push("ඔබේ ලග්නය මොකක්ද?");
+  lines.push("අද දවසේ පලාපල ඔබේ ජීවිතයට ගැළපෙනවාද?");
+  lines.push("Comment කරන්න. ඔබේ හිතවතුන්ටත් දැනගැනීමට මෙම Post එක Share කරන්න.");
+  lines.push(currentTheme.wish);
+  lines.push("🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු!");
+  lines.push(
+    "#AstroTharaka #AstrologyLK #DailyHoroscope #LagnaPalapala #SinhalaAstrology #ජ්යෝතිෂය #ලග්නපලාපල #දෛනිකලග්නපලාපල #කේන්දරය #SriLanka"
   );
 
   return lines.join("\n");
