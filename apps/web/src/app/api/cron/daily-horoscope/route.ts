@@ -1,6 +1,127 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 export const dynamic = "force-dynamic";
+
+function getBannerBuffer(): Buffer | null {
+  const possiblePaths = [
+    path.join(process.cwd(), "public/brand/daily-horoscope-banner.jpg"),
+    path.join(process.cwd(), "apps/web/public/brand/daily-horoscope-banner.jpg"),
+    "/app/apps/web/public/brand/daily-horoscope-banner.jpg",
+    "/app/public/brand/daily-horoscope-banner.jpg",
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      try {
+        return fs.readFileSync(p);
+      } catch {
+        // ignore
+      }
+    }
+  }
+  return null;
+}
+
+function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: string): string {
+  const dateDisplay =
+    (typeof horoscopeData.dateDisplay === "object"
+      ? horoscopeData.dateDisplay?.si
+      : horoscopeData.dateDisplay) || slstDateStr;
+
+  const lines: string[] = [
+    "🌟🔮 අද දවස ඔබේ ලග්නයට කොහොමද?",
+    `📅 ${dateDisplay}`,
+    "✨ ආදරය, රැකියාව, මුදල් සහ ජීවිතයේ කටයුතු ගැන අද දවසේ ලග්න පලාපල මෙන්න!",
+    "",
+  ];
+
+  const predictionsList = Array.isArray(horoscopeData.predictions)
+    ? (horoscopeData.predictions as Array<Record<string, unknown>>)
+    : [];
+
+  const defaultLagnas = [
+    { code: "aries", symbol: "♈", nameSi: "මේෂ" },
+    { code: "taurus", symbol: "♉", nameSi: "වෘෂභ" },
+    { code: "gemini", symbol: "♊", nameSi: "මිථුන" },
+    { code: "cancer", symbol: "♋", nameSi: "කටක" },
+    { code: "leo", symbol: "♌", nameSi: "සිංහ" },
+    { code: "virgo", symbol: "♍", nameSi: "කන්‍යා" },
+    { code: "libra", symbol: "♎", nameSi: "තුලා" },
+    { code: "scorpio", symbol: "♏", nameSi: "වෘශ්චික" },
+    { code: "sagittarius", symbol: "♐", nameSi: "ධනු" },
+    { code: "capricorn", symbol: "♑", nameSi: "මකර" },
+    { code: "aquarius", symbol: "♒", nameSi: "කුම්භ" },
+    { code: "pisces", symbol: "♓", nameSi: "මීන" },
+  ];
+
+  for (const def of defaultLagnas) {
+    const p = predictionsList.find((it) => {
+      if (!it || typeof it !== "object") return false;
+      return (
+        it.code === def.code ||
+        it.lagnaKey === def.code ||
+        it.nameSi === def.nameSi ||
+        it.lagnaName === def.nameSi
+      );
+    });
+
+    const symbol = (p?.symbol as string) || def.symbol;
+    const nameSi = (p?.nameSi as string) || (p?.lagnaName as string) || def.nameSi;
+
+    const summary =
+      (typeof p?.summary === "object" && p.summary !== null
+        ? (p.summary as Record<string, string>).si
+        : (p?.summary as string)) ||
+      (typeof p?.prediction === "object" && p.prediction !== null
+        ? (p.prediction as Record<string, string>).si
+        : (p?.prediction as string)) ||
+      "ඉවසීමෙන් හා කල්පනාකාරීව කටයුතු කිරීමෙන් බලාපොරොත්තු සාර්ථක කරගත හැකි දිනයකි.";
+
+    const luckyColor =
+      (typeof p?.luckyColor === "object" && p.luckyColor !== null
+        ? (p.luckyColor as Record<string, string>).si
+        : (p?.luckyColor as string)) || "";
+
+    const luckyNumber =
+      (typeof p?.luckyNumber === "object" && p.luckyNumber !== null
+        ? (p.luckyNumber as Record<string, string>).si
+        : (p?.luckyNumber as string)) || "";
+
+    let colorDot = "✨";
+    if (luckyColor.includes("රතු")) colorDot = "🔴";
+    else if (luckyColor.includes("සුදු")) colorDot = "⚪";
+    else if (luckyColor.includes("කොළ")) colorDot = "🟢";
+    else if (luckyColor.includes("කහ") || luckyColor.includes("රන්වන්")) colorDot = "🟡";
+    else if (luckyColor.includes("නිල්")) colorDot = "🔵";
+    else if (luckyColor.includes("තැඹිලි")) colorDot = "🟠";
+    else if (luckyColor.includes("දම්")) colorDot = "🟣";
+
+    lines.push(`${symbol} ${nameSi} ලග්නය`);
+    lines.push(summary);
+    if (luckyColor) {
+      lines.push(`${colorDot} සුබ වර්ණය: ${luckyColor}`);
+    }
+    if (luckyNumber) {
+      lines.push(`🔢 ජය අංකය: ${luckyNumber}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("🎁🔮 ඔබේ කේන්දරය නොමිලේ බලාගන්න!");
+  lines.push("ඔබේ උපන් දිනය, වේලාව සහ ස්ථානය අනුව කේන්දරය සහ ග්‍රහ පිහිටීම් ගැන දැනගන්න.");
+  lines.push("🌐 https://astrotharaka.com");
+  lines.push("");
+  lines.push("💬 ඔබේ ලග්නය මොකක්ද? ♈♉♊");
+  lines.push("👇 Comment කරන්න! ඔබේ ලග්නයට අද දවසේ පලාපල ගැළපෙනවාද කියලත් අපට කියන්න. ❤️");
+  lines.push("");
+  lines.push("🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු! ✨");
+  lines.push(
+    "#AstroTharaka #DailyHoroscope #AstrologyLK #LagnaPalapala #SinhalaAstrology #ජ්‍යෝතිෂය #අදලග්නපලාපල #කේන්දරය #SriLanka"
+  );
+
+  return lines.join("\n");
+}
 
 interface MultilingualString {
   si?: string;
@@ -131,37 +252,10 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
         ? horoscopeData.panchanga.maruDishawa?.si
         : (horoscopeData.panchanga?.maruDishawa as string | undefined)) || "නැගෙනහිර";
 
-    const generalNotes: string =
-      (typeof horoscopeData.generalNotes === "object"
-        ? horoscopeData.generalNotes?.si
-        : (horoscopeData.generalNotes as string | undefined)) || "";
+    // 4. Construct Engaging Sinhala Caption Text for Facebook (matches custom template)
+    const caption = buildSinhalaDailyPost(horoscopeData, slstDateStr);
 
-    // Build or use prepared caption
-    let caption: string =
-      (typeof horoscopeData.socialPost === "object"
-        ? horoscopeData.socialPost?.si
-        : (horoscopeData.socialPost as string | undefined)) || "";
-
-    if (!caption || typeof caption !== "string" || caption.trim().length < 50) {
-      caption = [
-        `🌟 ${dateDisplay} - අද දවසේ පලාපල සහ පංචාංගය 🌟`,
-        "",
-        "සුභ උදෑසනක්! අද දවසේ පංචාංග විස්තර සහ සුබ මුහුර්ත මෙන්න:",
-        "",
-        `⏰ රාහු කාලය: ${rahuKalaya}`,
-        `🧭 සුබ දිශාව: ${subaDishawa} | මරු සිටින දිශාව: ${maruDishawa}`,
-        "",
-        "✨ දවසේ පොදු ග්‍රහ චාරය සහ විශේෂ සටහන:",
-        generalNotes.slice(0, 320) + (generalNotes.length > 320 ? "..." : ""),
-        "",
-        "🔮 ඔබේ ලග්නයට අදාළ සම්පූර්ණ දිනපතා පලාපල (රැකියාව, ධනය, ප්‍රේමය, සෞඛ්‍යය සහ ජය අංක) දැන්ම කියවන්න:",
-        "👉 https://astrotharaka.com/daily-horoscope",
-        "",
-        "#AstroTaraka #DailyHoroscope #LagnaPalapala #SriLankaAstrology #Panchangam",
-      ].join("\n");
-    }
-
-    // 5. Social Media Publishing (Facebook Graph API - Text Post)
+    // 5. Social Media Publishing (Facebook Graph API - Banner Photo with Caption)
     const pageId = process.env.FACEBOOK_PAGE_ID?.trim();
     const pageToken = process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim();
     const postingEnabled =
@@ -177,28 +271,53 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
       fbStatus = "SKIPPED (Missing FACEBOOK_PAGE_ID or FACEBOOK_PAGE_ACCESS_TOKEN in env)";
       console.warn(`[AstroTharaka Cron] ${fbStatus}`);
     } else {
-      console.log(`[AstroTharaka Cron] Publishing daily caption to Facebook Page ${pageId}...`);
+      console.log(`[AstroTharaka Cron] Publishing daily banner photo to Facebook Page ${pageId}...`);
 
       const targetEndpoint =
         !pageId || pageId.toLowerCase() === "me"
           ? "me"
           : encodeURIComponent(pageId);
 
-      let fbResponse = await fetch(`https://graph.facebook.com/v19.0/${targetEndpoint}/feed`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: caption,
-          access_token: pageToken,
-        }),
-      });
+      const bannerBuffer = getBannerBuffer();
+      const publicBannerUrl = `${process.env.WEB_APP_URL || "https://astrotharaka.com"}/brand/daily-horoscope-banner.jpg`;
 
+      const postWithPhoto = async (endpoint: string): Promise<Response> => {
+        if (bannerBuffer) {
+          const formData = new FormData();
+          formData.append("caption", caption);
+          formData.append("access_token", pageToken);
+          const blob = new Blob([bannerBuffer], { type: "image/jpeg" });
+          formData.append("source", blob, "daily-horoscope-banner.jpg");
+          return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
+            method: "POST",
+            body: formData,
+          });
+        }
+        return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: publicBannerUrl,
+            caption: caption,
+            access_token: pageToken,
+          }),
+        });
+      };
+
+      let fbResponse = await postWithPhoto(targetEndpoint);
       let fbData = (await fbResponse.json()) as FacebookPostResponse;
 
-      // If global ID error (#100) occurs, fallback automatically to /me/feed
+      // If global ID error (#100) occurs, fallback automatically to /me/photos
       if (!fbResponse.ok && targetEndpoint !== "me" && fbData?.error?.message?.toLowerCase().includes("global id")) {
-        console.warn("[AstroTharaka Cron] Direct page ID rejected as global ID. Retrying with /me/feed...");
-        fbResponse = await fetch("https://graph.facebook.com/v19.0/me/feed", {
+        console.warn("[AstroTharaka Cron] Direct page ID rejected as global ID. Retrying with /me/photos...");
+        fbResponse = await postWithPhoto("me");
+        fbData = (await fbResponse.json()) as FacebookPostResponse;
+      }
+
+      // If photo post fails, fallback to feed text post
+      if (!fbResponse.ok && (fbResponse.status === 400 || fbResponse.status === 403)) {
+        console.warn("[AstroTharaka Cron] Photo post failed, falling back to /feed text post:", fbData?.error?.message);
+        fbResponse = await fetch(`https://graph.facebook.com/v19.0/${targetEndpoint}/feed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -207,6 +326,17 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
           }),
         });
         fbData = (await fbResponse.json()) as FacebookPostResponse;
+        if (!fbResponse.ok && targetEndpoint !== "me" && fbData?.error?.message?.toLowerCase().includes("global id")) {
+          fbResponse = await fetch("https://graph.facebook.com/v19.0/me/feed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: caption,
+              access_token: pageToken,
+            }),
+          });
+          fbData = (await fbResponse.json()) as FacebookPostResponse;
+        }
       }
 
       if (!fbResponse.ok) {
