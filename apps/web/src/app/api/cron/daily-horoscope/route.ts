@@ -36,24 +36,144 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
     "",
   ];
 
-  const predictionsList = Array.isArray(horoscopeData.predictions)
-    ? (horoscopeData.predictions as Array<Record<string, unknown>>)
+  const rawList =
+    (horoscopeData as Record<string, unknown>).lagnaPredictions ??
+    (horoscopeData as Record<string, unknown>).predictions ??
+    [];
+
+  let parsedList: unknown = rawList;
+  if (typeof rawList === "string") {
+    try {
+      parsedList = JSON.parse(rawList);
+    } catch {
+      parsedList = [];
+    }
+  }
+
+  const predictionsList = Array.isArray(parsedList)
+    ? (parsedList as Array<Record<string, unknown>>)
     : [];
 
-  const defaultLagnas = [
-    { code: "aries", symbol: "♈", nameSi: "මේෂ" },
-    { code: "taurus", symbol: "♉", nameSi: "වෘෂභ" },
-    { code: "gemini", symbol: "♊", nameSi: "මිථුන" },
-    { code: "cancer", symbol: "♋", nameSi: "කටක" },
-    { code: "leo", symbol: "♌", nameSi: "සිංහ" },
-    { code: "virgo", symbol: "♍", nameSi: "කන්‍යා" },
-    { code: "libra", symbol: "♎", nameSi: "තුලා" },
-    { code: "scorpio", symbol: "♏", nameSi: "වෘශ්චික" },
-    { code: "sagittarius", symbol: "♐", nameSi: "ධනු" },
-    { code: "capricorn", symbol: "♑", nameSi: "මකර" },
-    { code: "aquarius", symbol: "♒", nameSi: "කුම්භ" },
-    { code: "pisces", symbol: "♓", nameSi: "මීන" },
+  const defaultLagnas: Array<{
+    code: string;
+    symbol: string;
+    nameSi: string;
+    fallbackPrediction: string;
+    fallbackColor: string;
+    fallbackNumber: string;
+  }> = [
+    {
+      code: "aries",
+      symbol: "♈",
+      nameSi: "මේෂ",
+      fallbackPrediction: "රැකියා සහ ව්‍යාපාර කටයුතුවල අලුත් උනන්දුවක් ඇතිවිය හැකියි. ප්‍රමාද වූ වැඩ අවසන් කිරීමට උත්සාහ කරන්න. හදිසි තීරණ සහ අනවශ්‍ය වියදම්වලින් වළකින්න.",
+      fallbackColor: "රතු",
+      fallbackNumber: "09",
+    },
+    {
+      code: "taurus",
+      symbol: "♉",
+      nameSi: "වෘෂභ",
+      fallbackPrediction: "ඉවසීමෙන් වැඩ කිරීමෙන් යහපත් ප්‍රතිඵල ලබාගත හැකියි. පවුලේ සමගියට මුල් තැන දෙන්න. ආදායමෙන් කොටසක් ඉතිරි කිරීමට සුදුසු දිනයක්.",
+      fallbackColor: "සුදු",
+      fallbackNumber: "06",
+    },
+    {
+      code: "gemini",
+      symbol: "♊",
+      nameSi: "මිථුන",
+      fallbackPrediction: "අලුත් සබඳතා සහ අදහස් ඔබට ප්‍රයෝජනවත් විය හැකියි. රැකියාවේදී අදහස් පැහැදිලිව ඉදිරිපත් කරන්න. එකවර වැඩ රැසක් ආරම්භ කිරීමෙන් වළකින්න.",
+      fallbackColor: "කොළ",
+      fallbackNumber: "05",
+    },
+    {
+      code: "cancer",
+      symbol: "♋",
+      nameSi: "කටක",
+      fallbackPrediction: "පවුලේ වගකීම් වෙනුවෙන් වැඩි අවධානයක් යොමු කිරීමට සිදුවිය හැකියි. සමීප අය සමඟ සුහදව කටයුතු කරන්න. මුදල් ගනුදෙනුවලදී සැලකිලිමත් වන්න.",
+      fallbackColor: "සුදු",
+      fallbackNumber: "02",
+    },
+    {
+      code: "leo",
+      symbol: "♌",
+      nameSi: "සිංහ",
+      fallbackPrediction: "නායකත්ව ගුණාංග විදහා දැක්වීමට අවස්ථාව සැලසේ. ආත්ම විශ්වාසයෙන් වැඩකටයුතු කරන්න. අන්‍යන්ගේ අදහස්වලටද ගරු කරන්න.",
+      fallbackColor: "රන්වන් කහ",
+      fallbackNumber: "01",
+    },
+    {
+      code: "virgo",
+      symbol: "♍",
+      nameSi: "කන්‍යා",
+      fallbackPrediction: "සැලසුම් සහගතව කටයුතු කිරීමෙන් බලාපොරොත්තු ඉටු වේ. විස්තරාත්මක කාර්යයන් සාර්ථකව නිම කළ හැක. අධික විවේචනයෙන් වළකින්න.",
+      fallbackColor: "කොළ",
+      fallbackNumber: "05",
+    },
+    {
+      code: "libra",
+      symbol: "♎",
+      nameSi: "තුලා",
+      fallbackPrediction: "හවුල් ව්‍යාපාර සහ සබඳතා වඩාත් ශක්තිමත් වේ. සාමකාමී පරිසරයක සිත සැහැල්ලුවෙන් තබාගන්න. මූල්‍ය තීරණ සමබරව ගන්න.",
+      fallbackColor: "ලා නිල්",
+      fallbackNumber: "06",
+    },
+    {
+      code: "scorpio",
+      symbol: "♏",
+      nameSi: "වෘශ්චික",
+      fallbackPrediction: "සැඟවුණු හැකියාවන් ඉස්මතු වන දිනයකි. නොසැලෙන අධිෂ්ඨානයෙන් බාධක ජයගත හැක. ඉක්මන් කෝපය පාලනය කරගන්න.",
+      fallbackColor: "තද රතු",
+      fallbackNumber: "09",
+    },
+    {
+      code: "sagittarius",
+      symbol: "♐",
+      nameSi: "ධනු",
+      fallbackPrediction: "නව ඉගෙනුම් හා ගමන් බිමන්වලට සුබයි. දූරදර්ශී අදහස් තුළින් සාර්ථකත්වය අත්වේ. අධික වියදම් සීමා කරන්න.",
+      fallbackColor: "කහ",
+      fallbackNumber: "03",
+    },
+    {
+      code: "capricorn",
+      symbol: "♑",
+      nameSi: "මකර",
+      fallbackPrediction: "වෘත්තීය ඉලක්ක සපුරාගැනීමට කැපවීම ප්‍රයෝජනවත් වේ. ඉවසීමෙන් කටයුතු කරන්න. වැඩිහිටියන්ගේ අවවාද පිළිපදින්න.",
+      fallbackColor: "තද නිල්",
+      fallbackNumber: "08",
+    },
+    {
+      code: "aquarius",
+      symbol: "♒",
+      nameSi: "කුම්භ",
+      fallbackPrediction: "නව අදහස් හා නවෝත්පාදන තුළින් සමාජයේ ප්‍රසාදය ලැබේ. මිතුරු ඇසුරින් උපකාර හිමිවේ. අනවශ්‍ය කරදරවලට මැදි නොවන්න.",
+      fallbackColor: "අළු හෝ නිල්",
+      fallbackNumber: "08",
+    },
+    {
+      code: "pisces",
+      symbol: "♓",
+      nameSi: "මීන",
+      fallbackPrediction: "අධ්‍යාත්මික සහන හා මනසේ සතුට වර්ධනය වේ. නිර්මාණශීලී කටයුතුවලින් ප්‍රතිඵල ලැබේ. ප්‍රායෝගිකව තීරණ ගන්න.",
+      fallbackColor: "කහ",
+      fallbackNumber: "03",
+    },
   ];
+
+  const extractText = (f: unknown): string => {
+    if (!f) return "";
+    if (typeof f === "string") return f.trim();
+    if (typeof f === "object" && f !== null) {
+      const obj = f as Record<string, unknown>;
+      return (
+        (typeof obj.si === "string" ? obj.si : "") ||
+        (typeof obj.en === "string" ? obj.en : "") ||
+        (typeof obj.ta === "string" ? obj.ta : "") ||
+        ""
+      ).trim();
+    }
+    return "";
+  };
 
   for (const def of defaultLagnas) {
     const p = predictionsList.find((it) => {
@@ -69,42 +189,38 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
     const symbol = (p?.symbol as string) || def.symbol;
     const nameSi = (p?.nameSi as string) || (p?.lagnaName as string) || def.nameSi;
 
-    const summary =
-      (typeof p?.summary === "object" && p.summary !== null
-        ? (p.summary as Record<string, string>).si
-        : (p?.summary as string)) ||
-      (typeof p?.prediction === "object" && p.prediction !== null
-        ? (p.prediction as Record<string, string>).si
-        : (p?.prediction as string)) ||
-      "ඉවසීමෙන් හා කල්පනාකාරීව කටයුතු කිරීමෙන් බලාපොරොත්තු සාර්ථක කරගත හැකි දිනයකි.";
+    const summaryText = extractText(p?.summary);
+    const careerText = extractText(p?.career);
+    const wealthText = extractText(p?.wealth);
 
-    const luckyColor =
-      (typeof p?.luckyColor === "object" && p.luckyColor !== null
-        ? (p.luckyColor as Record<string, string>).si
-        : (p?.luckyColor as string)) || "";
+    let prediction = summaryText;
+    if (!prediction || prediction.length < 35) {
+      const parts = [summaryText, careerText, wealthText].filter(Boolean);
+      prediction = parts.length > 0 ? parts.join(" ") : def.fallbackPrediction;
+    }
+    if (!prediction || prediction.length < 15) {
+      prediction = def.fallbackPrediction;
+    }
 
-    const luckyNumber =
-      (typeof p?.luckyNumber === "object" && p.luckyNumber !== null
-        ? (p.luckyNumber as Record<string, string>).si
-        : (p?.luckyNumber as string)) || "";
+    const luckyColor = extractText(p?.luckyColor) || def.fallbackColor;
+    let luckyNumber = extractText(p?.luckyNumber) || def.fallbackNumber;
+    if (luckyNumber.length === 1) {
+      luckyNumber = `0${luckyNumber}`;
+    }
 
-    let colorDot = "✨";
-    if (luckyColor.includes("රතු")) colorDot = "🔴";
-    else if (luckyColor.includes("සුදු")) colorDot = "⚪";
+    let colorDot = "🔴";
+    if (luckyColor.includes("සුදු")) colorDot = "⚪";
     else if (luckyColor.includes("කොළ")) colorDot = "🟢";
     else if (luckyColor.includes("කහ") || luckyColor.includes("රන්වන්")) colorDot = "🟡";
     else if (luckyColor.includes("නිල්")) colorDot = "🔵";
     else if (luckyColor.includes("තැඹිලි")) colorDot = "🟠";
     else if (luckyColor.includes("දම්")) colorDot = "🟣";
+    else if (luckyColor.includes("රතු")) colorDot = "🔴";
 
     lines.push(`${symbol} ${nameSi} ලග්නය`);
-    lines.push(summary);
-    if (luckyColor) {
-      lines.push(`${colorDot} සුබ වර්ණය: ${luckyColor}`);
-    }
-    if (luckyNumber) {
-      lines.push(`🔢 ජය අංකය: ${luckyNumber}`);
-    }
+    lines.push(prediction);
+    lines.push(`${colorDot} සුබ වර්ණය: ${luckyColor}`);
+    lines.push(`🔢 ජය අංකය: ${luckyNumber}`);
     lines.push("");
   }
 
