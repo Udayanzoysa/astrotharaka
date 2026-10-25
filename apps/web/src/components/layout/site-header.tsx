@@ -171,7 +171,8 @@ export function SiteHeader() {
   const horoscopeLabel = previewUsed ? t("navHadahana") : t("guestReport");
 
   const services: NavItem[] = [
-    { href: "/#home-report", label: horoscopeLabel, accent: true },
+    { href: "/daily-horoscope", label: "අද දවසේ පලාපල", accent: true },
+    { href: "/#home-report", label: horoscopeLabel },
     { href: "/baby-names", label: t("babyNames") },
     { href: "/porondam", label: t("porondam") },
     { href: "/dream-interpretation", label: t("dreamInterpretation") },

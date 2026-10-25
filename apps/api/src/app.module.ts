@@ -19,6 +19,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FreePreviewModule } from './free-preview/free-preview.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { BankAccountsModule } from './bank-accounts/bank-accounts.module';
+import { DailyHoroscopeModule } from './daily-horoscope/daily-horoscope.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { BankAccountsModule } from './bank-accounts/bank-accounts.module';
     DreamInterpretationsModule,
     SubscriptionsModule,
     FreePreviewModule,
+    DailyHoroscopeModule,
   ],
 })
 export class AppModule {}

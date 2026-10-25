@@ -674,3 +674,41 @@ model RolePermission {
 
   @@id([roleId, permissionId])
 }
+
+enum HoroscopePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model DailyHoroscope {
+  id               String          @id @default(uuid())
+  period           HoroscopePeriod @default(DAILY)
+  /// For DAILY: "YYYY-MM-DD" (e.g. "2026-10-24"), for WEEKLY: "YYYY-Www", for MONTHLY: "YYYY-MM", for YEARLY: "YYYY"
+  periodKey        String
+  /// Display formatted date (e.g. "2026 ඔක්තෝබර් 24 - සෙනසුරාදා")
+  dateDisplay      String
+  /// Panchanga details (rahuKalaya, subaDishawa, maruDishawa, etc.)
+  panchanga        Json
+  /// General transit overview and special note (පොදු ග්‍රහ චාරය සහ විශේෂ සටහන)
+  generalNotes     String          @db.Text
+  /// 12 Lagna predictions (Aries to Pisces with career, wealth, love, health, lucky info)
+  lagnaPredictions Json
+  /// Formatted ready-to-publish social media text (Facebook, etc.)
+  socialPost       String?         @db.Text
+  /// Social posting status and metadata
+  socialPostedAt   DateTime?
+  socialPostId     String?
+  socialPostStatus String?         @default("PENDING")
+  /// AI Provider & Model used (e.g. "gemini:gemini-2.5-flash" or "openai:gpt-4o-mini")
+  aiProvider       String?
+  aiModel          String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([period, periodKey])
+  @@index([period, periodKey])
+  @@index([createdAt])
+}
+
