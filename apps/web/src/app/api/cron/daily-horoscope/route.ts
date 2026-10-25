@@ -112,35 +112,35 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
 
     // 4. Construct Engaging Sinhala Caption Text for Facebook
     const dateDisplay =
-      typeof horoscopeData.dateDisplay === "object"
+      (typeof horoscopeData.dateDisplay === "object"
         ? horoscopeData.dateDisplay?.si
-        : horoscopeData.dateDisplay || slstDateStr;
+        : horoscopeData.dateDisplay) || slstDateStr;
 
     const rahuKalaya =
-      typeof horoscopeData.panchanga?.rahuKalaya === "object"
-        ? horoscopeData.panchanga.rahuKalaya.si
-        : horoscopeData.panchanga?.rahuKalaya || "පෙ.ව. 09:00 - 10:30";
+      (typeof horoscopeData.panchanga?.rahuKalaya === "object"
+        ? horoscopeData.panchanga.rahuKalaya?.si
+        : (horoscopeData.panchanga?.rahuKalaya as string | undefined)) || "පෙ.ව. 09:00 - 10:30";
 
     const subaDishawa =
-      typeof horoscopeData.panchanga?.subaDishawa === "object"
-        ? horoscopeData.panchanga.subaDishawa.si
-        : horoscopeData.panchanga?.subaDishawa || "උතුර";
+      (typeof horoscopeData.panchanga?.subaDishawa === "object"
+        ? horoscopeData.panchanga.subaDishawa?.si
+        : (horoscopeData.panchanga?.subaDishawa as string | undefined)) || "උතුර";
 
     const maruDishawa =
-      typeof horoscopeData.panchanga?.maruDishawa === "object"
-        ? horoscopeData.panchanga.maruDishawa.si
-        : horoscopeData.panchanga?.maruDishawa || "නැගෙනහිර";
+      (typeof horoscopeData.panchanga?.maruDishawa === "object"
+        ? horoscopeData.panchanga.maruDishawa?.si
+        : (horoscopeData.panchanga?.maruDishawa as string | undefined)) || "නැගෙනහිර";
 
-    const generalNotes =
-      typeof horoscopeData.generalNotes === "object"
+    const generalNotes: string =
+      (typeof horoscopeData.generalNotes === "object"
         ? horoscopeData.generalNotes?.si
-        : horoscopeData.generalNotes || "";
+        : (horoscopeData.generalNotes as string | undefined)) || "";
 
     // Build or use prepared caption
-    let caption = horoscopeData.socialPost;
-    if (typeof caption === "object") {
-      caption = caption?.si || "";
-    }
+    let caption: string =
+      (typeof horoscopeData.socialPost === "object"
+        ? horoscopeData.socialPost?.si
+        : (horoscopeData.socialPost as string | undefined)) || "";
 
     if (!caption || typeof caption !== "string" || caption.trim().length < 50) {
       caption = [
@@ -195,7 +195,7 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
         fbStatus = `FAILED: ${fbError}`;
         console.error(`[AstroTharaka Cron] Facebook post failed:`, fbError);
       } else {
-        fbPostId = fbData.id;
+        fbPostId = fbData.id || null;
         fbStatus = "POSTED";
         console.log(`[AstroTharaka Cron] Successfully published to Facebook! Post ID: ${fbPostId}`);
       }
