@@ -4,24 +4,60 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-function getBannerBuffer(): Buffer | null {
-  const possiblePaths = [
-    path.join(process.cwd(), "public/brand/daily-horoscope-banner.jpg"),
-    path.join(process.cwd(), "apps/web/public/brand/daily-horoscope-banner.jpg"),
-    "/app/apps/web/public/brand/daily-horoscope-banner.jpg",
-    "/app/public/brand/daily-horoscope-banner.jpg",
+const DAY_BANNER_NAMES: Record<number, string> = {
+  0: "banner-sunday.jpg",
+  1: "banner-monday.jpg",
+  2: "banner-tuesday.jpg",
+  3: "banner-wednesday.jpg",
+  4: "banner-thursday.jpg",
+  5: "banner-friday.jpg",
+  6: "banner-saturday.jpg",
+};
+
+function getBannerBuffer(dayOfWeek?: number): { buffer: Buffer; fileName: string } | null {
+  const bannerFileName =
+    typeof dayOfWeek === "number" && DAY_BANNER_NAMES[dayOfWeek]
+      ? DAY_BANNER_NAMES[dayOfWeek]
+      : "daily-horoscope-banner.jpg";
+
+  const candidateDirs = [
+    path.join(process.cwd(), "public/brand/banners"),
+    path.join(process.cwd(), "apps/web/public/brand/banners"),
+    "/app/apps/web/public/brand/banners",
+    "/app/public/brand/banners",
+    path.join(process.cwd(), "public/brand"),
+    path.join(process.cwd(), "apps/web/public/brand"),
+    "/app/apps/web/public/brand",
+    "/app/public/brand",
   ];
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
+
+  // 1. Try day-specific banner
+  for (const dir of candidateDirs) {
+    const filePath = path.join(dir, bannerFileName);
+    if (fs.existsSync(filePath)) {
       try {
-        return fs.readFileSync(p);
+        return { buffer: fs.readFileSync(filePath), fileName: bannerFileName };
       } catch {
         // ignore
       }
     }
   }
+
+  // 2. Fallback to default daily-horoscope-banner.jpg
+  for (const dir of candidateDirs) {
+    const fallbackPath = path.join(dir, "daily-horoscope-banner.jpg");
+    if (fs.existsSync(fallbackPath)) {
+      try {
+        return { buffer: fs.readFileSync(fallbackPath), fileName: "daily-horoscope-banner.jpg" };
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   return null;
 }
+
 
 function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: string): string {
   const dateDisplay =
@@ -394,16 +430,23 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
           ? "me"
           : encodeURIComponent(pageId);
 
-      const bannerBuffer = getBannerBuffer();
-      const publicBannerUrl = `${process.env.WEB_APP_URL || "https://astrotharaka.com"}/brand/daily-horoscope-banner.jpg`;
+      const slstDayOfWeek = slstTime.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const bannerInfo = getBannerBuffer(slstDayOfWeek);
+      const bannerFileName =
+        bannerInfo?.fileName ||
+        DAY_BANNER_NAMES[slstDayOfWeek] ||
+        "daily-horoscope-banner.jpg";
+      const publicBannerUrl = `${process.env.WEB_APP_URL || "https://astrotharaka.com"}/brand/banners/${bannerFileName}`;
+
+      console.log(`[AstroTharaka Cron] Using daily banner for day ${slstDayOfWeek}: ${bannerFileName}`);
 
       const postWithPhoto = async (endpoint: string): Promise<Response> => {
-        if (bannerBuffer) {
+        if (bannerInfo?.buffer) {
           const formData = new FormData();
           formData.append("caption", caption);
           formData.append("access_token", pageToken);
-          const blob = new Blob([new Uint8Array(bannerBuffer)], { type: "image/jpeg" });
-          formData.append("source", blob, "daily-horoscope-banner.jpg");
+          const blob = new Blob([new Uint8Array(bannerInfo.buffer)], { type: "image/jpeg" });
+          formData.append("source", blob, bannerInfo.fileName);
           return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
             method: "POST",
             body: formData,
