@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useUi } from "@/components/providers/ui-provider";
 import type { Language } from "@/lib/types";
 
@@ -59,11 +59,12 @@ const ZODIAC_NAMES: Record<string, { si: string; en: string; ta: string }> = {
   pisces: { si: "මීන", en: "Pisces", ta: "மீனம்" },
 };
 
-function getLoc(val: any, lang: Language, fallback = ""): string {
+function getLoc(val: unknown, lang: Language, fallback = ""): string {
   if (!val) return fallback;
   if (typeof val === "string") return val;
-  if (typeof val === "object") {
-    return val[lang] || val.si || val.en || val.ta || fallback;
+  if (typeof val === "object" && val !== null) {
+    const record = val as Record<string, string | undefined>;
+    return record[lang] || record.si || record.en || record.ta || fallback;
   }
   return fallback;
 }
@@ -157,27 +158,30 @@ export default function DailyHoroscopePage() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3005/api/v1";
 
-  const fetchHoroscope = async (dateStr: string, periodStr: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${apiUrl}/daily-horoscope/${dateStr}?period=${periodStr}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      if (json.data) {
-        setData(json.data);
+  const fetchHoroscope = useCallback(
+    async (dateStr: string, periodStr: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`${apiUrl}/daily-horoscope/${dateStr}?period=${periodStr}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json.data) {
+          setData(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to load horoscope:", err);
+        setError(I18N.error[lang]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to load horoscope:", err);
-      setError(I18N.error[lang]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [apiUrl, lang]
+  );
 
   useEffect(() => {
     fetchHoroscope(selectedDate, selectedPeriod);
-  }, [selectedDate, selectedPeriod]);
+  }, [fetchHoroscope, selectedDate, selectedPeriod]);
 
   const changeDateByDays = (delta: number) => {
     const d = new Date(selectedDate);

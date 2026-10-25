@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+interface MultilingualString {
+  si?: string;
+  en?: string;
+  ta?: string;
+}
+
+interface HoroscopeRecord {
+  dateDisplay?: string | MultilingualString;
+  generalNotes?: string | MultilingualString;
+  socialPost?: string | MultilingualString;
+  panchanga?: {
+    rahuKalaya?: string | MultilingualString;
+    subaDishawa?: string | MultilingualString;
+    maruDishawa?: string | MultilingualString;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface FacebookPostResponse {
+  id?: string;
+  error?: {
+    message?: string;
+    code?: number;
+    type?: string;
+  };
+}
+
 /**
  * Astro Tharaka Automated Daily Horoscope Poster
  * Triggers every morning at 06:00 AM Sri Lanka Standard Time (00:30 UTC).
@@ -44,7 +72,7 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
     // 3. Data Retrieval & Generation Logic
     // Check if horoscope for today exists, or generate fresh via backend (Gemini API fallback)
     const forceGenerate = req.nextUrl.searchParams.get("force") === "true";
-    let horoscopeData: any = null;
+    let horoscopeData: HoroscopeRecord | null = null;
 
     if (!forceGenerate) {
       try {
@@ -160,7 +188,7 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
         }),
       });
 
-      const fbData = (await fbResponse.json()) as any;
+      const fbData = (await fbResponse.json()) as FacebookPostResponse;
 
       if (!fbResponse.ok) {
         fbError = fbData?.error?.message || `Facebook API HTTP ${fbResponse.status}`;
