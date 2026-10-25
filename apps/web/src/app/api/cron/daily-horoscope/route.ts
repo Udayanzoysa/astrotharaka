@@ -286,7 +286,7 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
           const formData = new FormData();
           formData.append("caption", caption);
           formData.append("access_token", pageToken);
-          const blob = new Blob([bannerBuffer], { type: "image/jpeg" });
+          const blob = new Blob([new Uint8Array(bannerBuffer)], { type: "image/jpeg" });
           formData.append("source", blob, "daily-horoscope-banner.jpg");
           return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
             method: "POST",
