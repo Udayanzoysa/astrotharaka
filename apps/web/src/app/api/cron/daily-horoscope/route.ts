@@ -179,7 +179,12 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
     } else {
       console.log(`[AstroTharaka Cron] Publishing daily caption to Facebook Page ${pageId}...`);
 
-      const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${encodeURIComponent(pageId)}/feed`, {
+      const targetEndpoint =
+        !pageId || pageId.toLowerCase() === "me"
+          ? "me"
+          : encodeURIComponent(pageId);
+
+      let fbResponse = await fetch(`https://graph.facebook.com/v19.0/${targetEndpoint}/feed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -188,7 +193,21 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
         }),
       });
 
-      const fbData = (await fbResponse.json()) as FacebookPostResponse;
+      let fbData = (await fbResponse.json()) as FacebookPostResponse;
+
+      // If global ID error (#100) occurs, fallback automatically to /me/feed
+      if (!fbResponse.ok && targetEndpoint !== "me" && fbData?.error?.message?.toLowerCase().includes("global id")) {
+        console.warn("[AstroTharaka Cron] Direct page ID rejected as global ID. Retrying with /me/feed...");
+        fbResponse = await fetch("https://graph.facebook.com/v19.0/me/feed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: caption,
+            access_token: pageToken,
+          }),
+        });
+        fbData = (await fbResponse.json()) as FacebookPostResponse;
+      }
 
       if (!fbResponse.ok) {
         fbError = fbData?.error?.message || `Facebook API HTTP ${fbResponse.status}`;

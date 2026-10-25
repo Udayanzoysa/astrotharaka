@@ -67,8 +67,13 @@ export class FacebookPublisher {
     }
 
     try {
-      const url = `https://graph.facebook.com/v19.0/${encodeURIComponent(pageId)}/feed`;
-      const response = await fetch(url, {
+      const targetEndpoint =
+        !pageId || pageId.toLowerCase() === 'me'
+          ? 'me'
+          : encodeURIComponent(pageId);
+
+      let url = `https://graph.facebook.com/v19.0/${targetEndpoint}/feed`;
+      let response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,7 +82,20 @@ export class FacebookPublisher {
         }),
       });
 
-      const data = (await response.json()) as any;
+      let data = (await response.json()) as any;
+
+      if (!response.ok && targetEndpoint !== 'me' && data?.error?.message?.toLowerCase().includes('global id')) {
+        console.warn('[FacebookPublisher] Direct page ID rejected as global ID. Retrying with /me/feed...');
+        response = await fetch('https://graph.facebook.com/v19.0/me/feed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: horoscope.socialPost,
+            access_token: token,
+          }),
+        });
+        data = (await response.json()) as any;
+      }
 
       if (!response.ok) {
         const msg = data?.error?.message || `Facebook API HTTP ${response.status}`;
