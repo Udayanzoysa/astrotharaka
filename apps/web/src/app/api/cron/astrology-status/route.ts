@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +44,65 @@ function detectTimeSlot(slstHour: number): TimeSlot {
   } else {
     return "evening"; // 7:00 PM
   }
+}
+
+interface StatusImageInfo {
+  buffer: Buffer;
+  fileName: string;
+  mimeType: string;
+}
+
+/**
+ * Automatically find, rotate, and load status images from public/brand/status-images
+ */
+function getStatusImage(slot: TimeSlot): StatusImageInfo | null {
+  const candidateDirs = [
+    path.join(process.cwd(), "public/brand/status-images"),
+    path.join(process.cwd(), "apps/web/public/brand/status-images"),
+    "/app/apps/web/public/brand/status-images",
+    "/app/public/brand/status-images",
+  ];
+
+  const validExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+
+  for (const dir of candidateDirs) {
+    if (fs.existsSync(dir)) {
+      try {
+        const files = fs
+          .readdirSync(dir)
+          .filter((f) => validExtensions.includes(path.extname(f).toLowerCase()));
+
+        if (files.length > 0) {
+          // Sort files so order is stable
+          files.sort();
+
+          // Calculate an index rotating by day of month and slot (morning: 0, afternoon: 1, evening: 2)
+          const slotMap: Record<TimeSlot, number> = { morning: 0, afternoon: 1, evening: 2 };
+          const now = new Date();
+          const day = now.getDate();
+          const rotationIndex = (day * 3 + slotMap[slot]) % files.length;
+          const chosenFile = files[rotationIndex];
+
+          const filePath = path.join(dir, chosenFile);
+          const buffer = fs.readFileSync(filePath);
+          const ext = path.extname(chosenFile).toLowerCase();
+          let mimeType = "image/jpeg";
+          if (ext === ".png") mimeType = "image/png";
+          else if (ext === ".webp") mimeType = "image/webp";
+
+          return {
+            buffer,
+            fileName: chosenFile,
+            mimeType,
+          };
+        }
+      } catch (err) {
+        console.warn("[AstroStatus] Error reading status-images directory:", err);
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -242,7 +303,7 @@ async function generateAiStatus(slot: TimeSlot): Promise<string | null> {
 
   const prompt = [
     "Act as an expert Sri Lankan Astrology content creator for the brand 'Astro Tharaka'.",
-    `Generate a short, captivating, text-only Facebook status in natural Sinhala for ${slotDescriptions[slot]}.`,
+    `Generate a short, captivating Facebook status caption in natural Sinhala for ${slotDescriptions[slot]}.`,
     "Guidelines:",
     "- Keep it engaging, mysterious, encouraging, and positive.",
     `- Mention these specific zodiac signs to create excitement: ${selectedSignsText}.`,
@@ -301,11 +362,16 @@ async function generateAiStatus(slot: TimeSlot): Promise<string | null> {
 }
 
 /**
- * Publish text-only status to Facebook Page Feed
+ * Publish status with rotating photo (or fallback to text) to Facebook Page Feed
  */
-async function publishToFacebook(message: string): Promise<{
+async function publishToFacebook(
+  message: string,
+  imageInfo: StatusImageInfo | null
+): Promise<{
   status: string;
   postId: string | null;
+  postType: "PHOTO" | "TEXT";
+  imageUsed: string | null;
   error?: string;
 }> {
   const pageId = process.env.FACEBOOK_PAGE_ID?.trim();
@@ -314,13 +380,21 @@ async function publishToFacebook(message: string): Promise<{
     (process.env.FACEBOOK_POSTING_ENABLED ?? "true").toLowerCase().trim() !== "false";
 
   if (!postingEnabled) {
-    return { status: "DISABLED", postId: null, error: "FACEBOOK_POSTING_ENABLED=false" };
+    return {
+      status: "DISABLED",
+      postId: null,
+      postType: imageInfo ? "PHOTO" : "TEXT",
+      imageUsed: imageInfo?.fileName || null,
+      error: "FACEBOOK_POSTING_ENABLED=false",
+    };
   }
 
   if (!pageId || !pageToken) {
     return {
       status: "SKIPPED",
       postId: null,
+      postType: imageInfo ? "PHOTO" : "TEXT",
+      imageUsed: imageInfo?.fileName || null,
       error: "Missing FACEBOOK_PAGE_ID or FACEBOOK_PAGE_ACCESS_TOKEN in env",
     };
   }
@@ -328,6 +402,52 @@ async function publishToFacebook(message: string): Promise<{
   const targetEndpoint =
     !pageId || pageId.toLowerCase() === "me" ? "me" : encodeURIComponent(pageId);
 
+  // 1. If image is available, attempt posting as Photo Post
+  if (imageInfo) {
+    try {
+      const postPhoto = async (endpoint: string) => {
+        const formData = new FormData();
+        formData.append("caption", message);
+        formData.append("access_token", pageToken);
+        const blob = new Blob([new Uint8Array(imageInfo.buffer)], { type: imageInfo.mimeType });
+        formData.append("source", blob, imageInfo.fileName);
+
+        return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
+          method: "POST",
+          body: formData,
+        });
+      };
+
+      let response = await postPhoto(targetEndpoint);
+      let data = (await response.json()) as { id?: string; error?: { message?: string } };
+
+      if (
+        !response.ok &&
+        targetEndpoint !== "me" &&
+        data?.error?.message?.toLowerCase().includes("global id")
+      ) {
+        response = await postPhoto("me");
+        data = (await response.json()) as { id?: string; error?: { message?: string } };
+      }
+
+      if (response.ok && data?.id) {
+        return {
+          status: "SUCCESS",
+          postId: data.id,
+          postType: "PHOTO",
+          imageUsed: imageInfo.fileName,
+        };
+      }
+
+      console.warn(
+        `[AstroStatus] Photo upload rejected (${data?.error?.message}), falling back to text feed post...`
+      );
+    } catch (err) {
+      console.warn("[AstroStatus] Photo upload exception, falling back to text feed post:", err);
+    }
+  }
+
+  // 2. Fallback to Text-only status post
   try {
     let response = await fetch(`https://graph.facebook.com/v19.0/${targetEndpoint}/feed`, {
       method: "POST",
@@ -358,13 +478,30 @@ async function publishToFacebook(message: string): Promise<{
 
     if (!response.ok) {
       const errMsg = data?.error?.message || `HTTP ${response.status}`;
-      return { status: `FAILED: ${errMsg}`, postId: null, error: errMsg };
+      return {
+        status: `FAILED: ${errMsg}`,
+        postId: null,
+        postType: "TEXT",
+        imageUsed: null,
+        error: errMsg,
+      };
     }
 
-    return { status: "SUCCESS", postId: data.id || null };
+    return {
+      status: "SUCCESS",
+      postId: data.id || null,
+      postType: "TEXT",
+      imageUsed: null,
+    };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    return { status: `FAILED: ${errMsg}`, postId: null, error: errMsg };
+    return {
+      status: `FAILED: ${errMsg}`,
+      postId: null,
+      postType: "TEXT",
+      imageUsed: null,
+      error: errMsg,
+    };
   }
 }
 
@@ -407,8 +544,11 @@ async function handleMiddayStatusCron(req: NextRequest) {
     generatedBy = "local-template-engine";
   }
 
-  // Publish to Facebook Feed
-  const fbResult = await publishToFacebook(statusText);
+  // Find image from public/brand/status-images
+  const imageInfo = getStatusImage(slot);
+
+  // Publish to Facebook (Photo post if image found, else Text post)
+  const fbResult = await publishToFacebook(statusText, imageInfo);
 
   const durationMs = Date.now() - startTime;
 
@@ -416,6 +556,8 @@ async function handleMiddayStatusCron(req: NextRequest) {
     success: fbResult.status === "SUCCESS",
     slot,
     generatedBy,
+    postType: fbResult.postType,
+    imageUsed: fbResult.imageUsed,
     statusText,
     facebook: fbResult,
     durationMs,
