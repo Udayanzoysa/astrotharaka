@@ -35,6 +35,103 @@ const FREE_KENDARA_PROMO = [
 
 type TimeSlot = "morning" | "afternoon" | "evening";
 
+function formatTomorrowDateSinhala(slstTime: Date): string {
+  const tomorrow = new Date(slstTime.getTime() + 24 * 60 * 60 * 1000);
+  const year = tomorrow.getUTCFullYear();
+  const monthNames = [
+    "ජනවාරි",
+    "පෙබරවාරි",
+    "මාර්තු",
+    "අප්‍රේල්",
+    "මැයි",
+    "ජූනි",
+    "ජූලි",
+    "අගෝස්තු",
+    "සැප්තැම්බර්",
+    "ඔක්තෝබර්",
+    "නොවැම්බර්",
+    "දෙසැම්බර්",
+  ];
+  const monthName = monthNames[tomorrow.getUTCMonth()];
+  const day = tomorrow.getUTCDate();
+
+  const dayNames = [
+    "ඉරිදා (රවි දින)",
+    "සඳුදා (චන්ද්‍ර දින)",
+    "අඟහරුවාදා (කුජ දින)",
+    "බදාදා (බුධ දින)",
+    "බ්‍රහස්පතින්දා (ගුරු දින)",
+    "සිකුරාදා (ශුක්‍ර දින)",
+    "සෙනසුරාදා (ශනි දින)",
+  ];
+  const dayName = dayNames[tomorrow.getUTCDay()];
+
+  return `${year} ${monthName} ${day} – ${dayName}`;
+}
+
+const EVENING_LUCKY_SIGN_DESCRIPTIONS: Record<string, string[]> = {
+  මේෂ: [
+    "රැකියා හා ව්‍යාපාරික කටයුතුවලින් අනපේක්ෂිත ලාභ හා උසස්වීම් ලැබීමට ඉඩ ඇති ඉතා සුබදායක දිනයකි.",
+    "නව ආදායම් මාර්ග විවෘත වන අතර සිතේ තිබූ බලාපොරොත්තුවක් සාර්ථක කරගත හැක.",
+    "ප්‍රධානීන්ගේ පැසසුම් සහ සහයෝගය හිමිවන අතර සැලසුම් කළ කාර්යයන් නියමිත වේලාවට නිම කළ හැක.",
+  ],
+  වෘෂභ: [
+    "මූල්‍යමය වාසි සහ නොසිතූ ධන ලාභ හිමිවන අතර පවුලේ සාමාජිකයන් සමඟ ප්‍රීතිමත් කාලයක් ගත කළ හැක.",
+    "මිලමුදල් ලැබීම් යහපත් වන අතර කලක් පැවති මානසික පීඩාවකින් සහනයක් හිමිවේ.",
+    "ව්‍යාපාරික සාකච්ඡා සාර්ථක වන අතර නව ගිවිසුම්වලට එළඹීමට ඉතා සුදුසු දිනයකි.",
+  ],
+  මිථුන: [
+    "බුද්ධිමත් තීරණ තුළින් ජයග්‍රහණ අත්වන අතර අධ්‍යාපනික හා සන්නිවේදන කටයුතුවලින් විශිෂ්ට ප්‍රතිඵල ලැබේ.",
+    "නව මිත්‍රත්වයන් ගොඩනැගෙන අතර ව්‍යාපාරික සබඳතා තවදුරටත් ශක්තිමත් කරගත හැක.",
+    "සිතේ ප්‍රබෝධය රඳවා ගනිමින් නිර්මාණශීලී කාර්යයන්හි නිරත වීමට මනා පිටුවහලක් ලැබේ.",
+  ],
+  කටක: [
+    "පවුලේ සතුට හා සාමය වර්ධනය වන අතර නිවසේ ප්‍රීතිමත් වාතාවරණයක් නිර්මාණය වේ.",
+    "හිතවතුන්ගේ සහයෝගය නොමඳව ලැබෙන අතර සිතට මහත් සැනසිලිදායක පණිවිඩයක් අසන්නට ලැබේ.",
+    "ආධ්‍යාත්මික සැනසීම හා සිතේ පැහැපත් බව ඉස්මතු වන ආශීර්වාදවත් දිනයකි.",
+  ],
+  සිංහ: [
+    "සමාජ ගෞරවය හා පිළිගැනීම ඉහළ යන අතර නායකත්ව හැකියාවන් කැපී පෙනෙන සුබදායක දිනයකි.",
+    "රැකියා ස්ථානයේ ප්‍රධානීන්ගේ සහයෝගය ලැබෙන අතර බාධක පහසුවෙන් ජයගත හැක.",
+    "කලක් ප්‍රමාද වූ වැදගත් කාර්යයක් සාර්ථක කරගැනීමට මාවත විවර වනු ඇත.",
+  ],
+  කන්‍යා: [
+    "සැලසුම් කළ සියලු කටයුතු පිළිවෙළකට හා සාර්ථකව අවසන් කරගැනීමට හැකි වාසනාවන්ත දිනයකි.",
+    "ව්‍යාපාරික හා ආර්ථික ගනුදෙනු වලින් යහපත් ලාභ හිමිවන අතර නිරවුල් මනසකින් වැඩ කළ හැක.",
+    "නොසිතූ උදව් උපකාර ලැබෙන අතර සිතේ තිබූ බරක් සැහැල්ලු කරගත හැක.",
+  ],
+  තුලා: [
+    "ආදර සබඳතා හා විවාහ ජීවිතයේ සතුට වර්ධනය වන අතර සුහදශීලී එකඟතාවන්ට එළඹිය හැක.",
+    "සිතේ සතුට හා ප්‍රීතිය ගෙනදෙන ප්‍රවෘත්තියක් ලැබෙන අතර කලාත්මක කටයුතුවලින් සාර්ථකත්වයක් අත්වේ.",
+    "හවුල් ව්‍යාපාර හා නව ආයෝජන සඳහා ඉතාම හිතකර ප්‍රතිචාර ලැබෙනු ඇත.",
+  ],
+  වෘශ්චික: [
+    "නොසිතූ අවස්ථාවලින් වාසි අත්වන අතර අධිෂ්ඨානයෙන් කරන ඕනෑම කාර්යයක් ජයග්‍රහණයෙන් කෙළවර වේ.",
+    "සතුරන් හා බාධක පරදවා ඉදිරියට යාමට මානසික ශක්තිය හා ධෛර්යය නොමඳව ලැබේ.",
+    "මූල්‍යමය වාසි මෙන්ම අනපේක්ෂිත දීමනා හෝ ත්‍යාග හිමිවීමේ හැකියාවක් පවතී.",
+  ],
+  ධනු: [
+    "මූල්‍යමය වාසි, නව ආයෝජන අවස්ථා සහ බලාපොරොත්තු වූ සුබ ආරංචි කිහිපයක් ලැබෙනු ඇත.",
+    "දුර බැහැර ගමන් හෝ විදෙස් සබඳතාවලින් යහපත් ප්‍රතිඵල අත්වන ප්‍රීතිමත් දිනයකි.",
+    "වාසනාව ඔබේ පැත්තේ රඳා පවතින අතර උසස් පුද්ගලයන්ගේ ඇසුර හා ආශීර්වාදය ලැබේ.",
+  ],
+  මකර: [
+    "කැපවීමේ නිසි ප්‍රතිඵල හිමිවන අතර රැකියා උසස්වීම් හෝ නව වගකීම් භාරගැනීමට අවස්ථාව සැලසේ.",
+    "ස්ථාවර මූල්‍ය වර්ධනයක් දක්නට ලැබෙන අතර දිගුකාලීන සැලසුම් ආරම්භ කිරීමට ඉතා සුබයි.",
+    "ඉවසීම හා කැපවීම තුළින් බාධක රැසක් මඟහැර විශිෂ්ට ජයග්‍රහණයක් අත්කරගත හැක.",
+  ],
+  කුම්භ: [
+    "නව අදහස් හා නවෝත්පාදන තුළින් නොසිතූ සාර්ථකත්වයක් අත්වන ඉතා ඵලදායී දිනයකි.",
+    "සමාජ සේවා හෝ මිතුරු කණ්ඩායම් අතර ඔබේ නම බබළන අතර ප්‍රශංසා හිමිවේ.",
+    "අනාගත ඉලක්ක කරා ළඟාවීමට අවශ්‍ය නව සම්බන්ධතා රාශියක් ගොඩනැගෙනු ඇත.",
+  ],
+  මීන: [
+    "සිතේ සැනසීම හා ප්‍රීතිය උපරිමයෙන් දැනෙන අතර ආධ්‍යාත්මික සුවය නොමඳව හිමිවේ.",
+    "පුණ්‍ය කටයුතු හෝ යහපත් ක්‍රියාවලින් සිතට මහත් සතුටක් ලැබෙන අතර ආශීර්වාද හිමිවේ.",
+    "කලක් සිතේ පැවති ප්‍රාර්ථනාවක් ඉටුවන අතර සිතේ තිබූ ගැටලුවකට විසඳුම් ලැබේ.",
+  ],
+};
+
 function detectTimeSlot(slstHour: number): TimeSlot {
   if (slstHour >= 6 && slstHour < 14) {
     return "morning"; // 10:00 AM
@@ -76,7 +173,7 @@ function getStatusImage(slot: TimeSlot): StatusImageInfo | null {
 /**
  * High-quality, diverse engaging status generator with time-slot awareness and free kendara promo link
  */
-function generateFallbackStatus(slot: TimeSlot): string {
+function generateFallbackStatus(slot: TimeSlot, slstTime?: Date): string {
   const morningTemplates = [
     () => {
       const signs = getRandomSigns(4);
@@ -187,54 +284,34 @@ function generateFallbackStatus(slot: TimeSlot): string {
 
   const eveningTemplates = [
     () => {
-      const signs = getRandomSigns(4);
+      const validSlstTime = slstTime || new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+      const tomorrowDateSinhala = formatTomorrowDateSinhala(validSlstTime);
+      const luckySigns = getRandomSigns(3);
+      const signsText = luckySigns
+        .map((s) => {
+          const descriptions = EVENING_LUCKY_SIGN_DESCRIPTIONS[s.si] || [
+            "රැකියා හා ව්‍යාපාරික කටයුතුවලින් අනපේක්ෂිත ලාභ හා උසස්වීම් ලැබීමට ඉඩ ඇති ඉතා සුබදායක දිනයකි.",
+          ];
+          const desc = descriptions[Math.floor(Math.random() * descriptions.length)];
+          return `${s.symbol} ${s.si} ලග්නය - ${desc}`;
+        })
+        .join("\n\n");
+
       return [
-        "🔮 තමන්ගේ හයවන ඉන්ද්‍රිය (Intuition) සහ ඕනෑම පුද්ගලයෙකු හෝ සිදුවීමක් ක්ෂණිකව වටහාගැනීමේ අපූරු හැකියාවක් ඇති ලග්න 4ක්:",
+        "හෙට දවසේ විශේෂ සුබ ලග්න 3 මෙන්න! 🌟",
         "",
-        `✨ ${formatSignsList(signs)}`,
+        tomorrowDateSinhala,
         "",
-        "ඔබටත් කලින් හිතෙන දේවල් ඒ විදියටම ඇත්ත වෙලා තියෙනවද? 🌟",
+        "හෙට දිනය සඳහා පළවූ සාම්ප්‍රදායික වෛදික ජ්‍යෝතිෂ පලාපල අනුව, විශේෂයෙන් සුබදායක බව සඳහන් වන ලග්න තුන මෙන්න.",
         "",
-        "ඔබේ ලග්නය මොකක්ද කියලා පහළින් Comment කර අත්දැකීම් බෙදාගන්න! 👇",
+        signsText,
         "",
-        FREE_KENDARA_PROMO,
+        "ඔබේ ලග්නය මේ අතර තියෙනවාද? Comment කරන්න! 👇",
+        "",
+        "සම්පූර්ණ ලග්න පලාපල: https://astrotharaka.com/daily-horoscope",
         "",
         "🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු!",
-        "#AstroTharaka #AstrologyLK #SinhalaAstrology",
-      ].join("\n");
-    },
-    () => {
-      const signs = getRandomSigns(3);
-      return [
-        "🔮 කොච්චර ප්‍රශ්න ආවත් සිතේ සැනසීම හා සාමය නැති කර නොගන්නා සැබෑම ඉවසීමක් හිමි ලග්න 3ක්:",
-        "",
-        `🌿 ${formatSignsList(signs)}`,
-        "",
-        "සැබෑ ජයග්‍රහණය රැඳෙන්නේ ඔබේ මේ ඉවසීම හා බුද්ධිමත් බව තුළයි! ✨",
-        "",
-        "මේ ලග්නවල ඉන්න ඔබේ හිතවතුන්ව Tag කරන්න! ඔබේ ලග්නයත් Comment කරන්න! 👇",
-        "",
-        FREE_KENDARA_PROMO,
-        "",
-        "🌙 Astro Tharaka",
-        "#AstroTharaka #AstrologyLK #PeacefulMinds",
-      ].join("\n");
-    },
-    () => {
-      const signs = getRandomSigns(4);
-      return [
-        "🌟 ග්‍රහ පිහිටීම්වල බලපෑමත් සමඟ ඉදිරි දිනවලදී ආදරය, විවාහය සහ පවුල් ජීවිතයේ සතුට දෙගුණ තෙගුණ වන ලග්න 4ක්:",
-        "",
-        `❤️ ${formatSignsList(signs)}`,
-        "",
-        "ඔබේ සමීපතමයන් සමඟ ආදරයෙන් කාලය ගත කරන්න! ✨",
-        "",
-        "ඔබේ ලග්නයත් මෙතන තියෙනවද? Comment කරන්න, ඔබේ සහකරුවාව හෝ සහකාරියව Tag කරන්න! 👇",
-        "",
-        FREE_KENDARA_PROMO,
-        "",
-        "🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු!",
-        "#AstroTharaka #AstrologyLK #LoveHoroscope",
+        "#AstroTharaka #AstrologyLK #LagnaPalapala #දෛනිකලග්නපලාපල #HoroscopeLK",
       ].join("\n");
     },
   ];
@@ -250,7 +327,7 @@ function generateFallbackStatus(slot: TimeSlot): string {
 /**
  * Generate via Gemini AI if available
  */
-async function generateAiStatus(slot: TimeSlot): Promise<string | null> {
+async function generateAiStatus(slot: TimeSlot, slstTime?: Date): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return null;
 
@@ -260,33 +337,75 @@ async function generateAiStatus(slot: TimeSlot): Promise<string | null> {
     "gemini-flash-latest",
   ].filter((m): m is string => Boolean(m) && m !== "gemini-2.5-flash");
 
-  const signs = getRandomSigns(Math.random() > 0.5 ? 4 : 3);
-  const selectedSignsText = signs.map((s) => `${s.symbol} ${s.si} (${s.en})`).join(", ");
+  const validSlstTime = slstTime || new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  let prompt: string;
 
-  const slotDescriptions = {
-    morning: "10:00 AM audience (inspiring, fresh energy, upcoming lucky chances)",
-    afternoon: "4:00 PM audience (work/business reflection, financial opportunities, personality strengths)",
-    evening: "7:00 PM audience (evening relaxation, love, relationships, intuition, tomorrow's mindset)",
-  };
+  if (slot === "evening") {
+    const tomorrowDateSinhala = formatTomorrowDateSinhala(validSlstTime);
+    const luckySigns = getRandomSigns(3);
+    const selectedSignsText = luckySigns
+      .map((s) => `${s.symbol} ${s.si} (${s.en})`)
+      .join(", ");
 
-  const prompt = [
-    "Act as an expert Sri Lankan Astrology content creator for the brand 'Astro Tharaka'.",
-    `Generate a short, captivating Facebook status caption in natural Sinhala for ${slotDescriptions[slot]}.`,
-    "Guidelines:",
-    "- Keep it engaging, mysterious, encouraging, and positive.",
-    `- Mention these specific zodiac signs to create excitement: ${selectedSignsText}.`,
-    "- Use relevant emojis (✨, 🔮, 🌟).",
-    "- Add a Call-to-Action (CTA) asking users to comment their zodiac sign or tag a friend.",
-    "",
-    "MANDATORY REQUIREMENT:",
-    "Always include this EXACT free horoscope call-to-action block before the brand/hashtags:",
-    "🎁 ඔබේ කේන්දරය නොමිලේ බලාගන්න!",
-    "ඔබේ උපන් දිනය, වේලාව සහ ස්ථානය අනුව සම්පූර්ණ කේන්දරය සහ ග්‍රහ පිහිටීම් දැන්ම නොමිලේ බලාගන්න:",
-    "🌐 https://astrotharaka.com",
-    "",
-    "- End with brand line '🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු!' and 2-3 hashtags (#AstroTharaka #AstrologyLK #LagnaPalapala).",
-    "- Output ONLY the final Sinhala status text. No markdown fences, no English explanation.",
-  ].join("\n");
+    prompt = [
+      "Act as an expert Sri Lankan Vedic Astrologer and content writer for the brand 'Astro Tharaka'.",
+      `Generate the 7:00 PM Facebook post highlighting TOMORROW's 3 most auspicious zodiac signs (${tomorrowDateSinhala}).`,
+      `The 3 featured signs are: ${selectedSignsText}.`,
+      "",
+      "MANDATORY FORMAT (You MUST follow this exact structure with blank empty lines between paragraphs for readability):",
+      "",
+      "හෙට දවසේ විශේෂ සුබ ලග්න 3 මෙන්න! 🌟",
+      "",
+      tomorrowDateSinhala,
+      "",
+      "හෙට දිනය සඳහා පළවූ සාම්ප්‍රදායික වෛදික ජ්‍යෝතිෂ පලාපල අනුව, විශේෂයෙන් සුබදායක බව සඳහන් වන ලග්න තුන මෙන්න.",
+      "",
+      "{symbol} {Sinhala Sign Name} ලග්නය - {A concise 1-2 sentence uplifting prediction about money, career, or family}",
+      "",
+      "{symbol} {Sinhala Sign Name} ලග්නය - {A concise 1-2 sentence uplifting prediction about money, career, or family}",
+      "",
+      "{symbol} {Sinhala Sign Name} ලග්නය - {A concise 1-2 sentence uplifting prediction about money, career, or family}",
+      "",
+      "ඔබේ ලග්නය මේ අතර තියෙනවාද? Comment කරන්න! 👇",
+      "",
+      "සම්පූර්ණ ලග්න පලාපල: https://astrotharaka.com/daily-horoscope",
+      "",
+      "🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු!",
+      "#AstroTharaka #AstrologyLK #LagnaPalapala #දෛනිකලග්නපලාපල #SriLanka",
+      "",
+      "RULES:",
+      "- Ensure there is a blank line between each zodiac sign prediction.",
+      "- Output ONLY the final Sinhala text ready to publish. No markdown code blocks, no English intro or outro.",
+    ].join("\n");
+  } else {
+    const signs = getRandomSigns(Math.random() > 0.5 ? 4 : 3);
+    const selectedSignsText = signs.map((s) => `${s.symbol} ${s.si} (${s.en})`).join(", ");
+
+    const slotDescriptions = {
+      morning: "10:00 AM audience (inspiring, fresh energy, upcoming lucky chances)",
+      afternoon: "4:00 PM audience (work/business reflection, financial opportunities, personality strengths)",
+      evening: "7:00 PM audience (evening relaxation, love, relationships, intuition, tomorrow's mindset)",
+    };
+
+    prompt = [
+      "Act as an expert Sri Lankan Astrology content creator for the brand 'Astro Tharaka'.",
+      `Generate a short, captivating Facebook status caption in natural Sinhala for ${slotDescriptions[slot]}.`,
+      "Guidelines:",
+      "- Keep it engaging, mysterious, encouraging, and positive.",
+      `- Mention these specific zodiac signs to create excitement: ${selectedSignsText}.`,
+      "- Use relevant emojis (✨, 🔮, 🌟).",
+      "- Add a Call-to-Action (CTA) asking users to comment their zodiac sign or tag a friend.",
+      "",
+      "MANDATORY REQUIREMENT:",
+      "Always include this EXACT free horoscope call-to-action block before the brand/hashtags:",
+      "🎁 ඔබේ කේන්දරය නොමිලේ බලාගන්න!",
+      "ඔබේ උපන් දිනය, වේලාව සහ ස්ථානය අනුව සම්පූර්ණ කේන්දරය සහ ග්‍රහ පිහිටීම් දැන්ම නොමිලේ බලාගන්න:",
+      "🌐 https://astrotharaka.com",
+      "",
+      "- End with brand line '🌙 Astro Tharaka – තරු අතරින් ජීවිතය කියවමු!' and 2-3 hashtags (#AstroTharaka #AstrologyLK #LagnaPalapala).",
+      "- Output ONLY the final Sinhala status text. No markdown fences, no English explanation.",
+    ].join("\n");
+  }
 
   for (const model of candidateModels) {
     try {
@@ -315,9 +434,15 @@ async function generateAiStatus(slot: TimeSlot): Promise<string | null> {
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
       if (text && text.length > 50) {
         let cleanText = text.replace(/```[a-z]*\n?/gi, "").trim();
-        // Ensure https://astrotharaka.com is present
-        if (!cleanText.includes("https://astrotharaka.com")) {
-          cleanText = cleanText + "\n\n" + FREE_KENDARA_PROMO;
+        if (slot === "evening") {
+          if (!cleanText.includes("https://astrotharaka.com/daily-horoscope")) {
+            cleanText = cleanText + "\n\nසම්පූර්ණ ලග්න පලාපල: https://astrotharaka.com/daily-horoscope";
+          }
+        } else {
+          // Ensure https://astrotharaka.com is present
+          if (!cleanText.includes("https://astrotharaka.com")) {
+            cleanText = cleanText + "\n\n" + FREE_KENDARA_PROMO;
+          }
         }
         return cleanText;
       }
@@ -469,11 +594,11 @@ async function handleMiddayStatusCron(req: NextRequest) {
   const slot: TimeSlot = slotParam || detectTimeSlot(slstHour);
 
   // Generate engaging status text (AI first, fallback if unavailable)
-  let statusText = await generateAiStatus(slot);
+  let statusText = await generateAiStatus(slot, slstTime);
   let generatedBy = "gemini-ai";
 
   if (!statusText) {
-    statusText = generateFallbackStatus(slot);
+    statusText = generateFallbackStatus(slot, slstTime);
     generatedBy = "local-template-engine";
   }
 
