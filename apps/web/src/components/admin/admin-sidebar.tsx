@@ -63,6 +63,12 @@ const links: NavLink[] = [
     roles: ["CONTENT", "SUPER_ADMIN", "FINANCE"],
   },
   {
+    href: "/admin/facebook-publisher",
+    label: "Facebook Publisher",
+    match: (p) => p.startsWith("/admin/facebook-publisher"),
+    roles: ["CONTENT", "SUPER_ADMIN"],
+  },
+  {
     href: "/admin/settings",
     label: "Settings",
     match: (p) => p.startsWith("/admin/settings"),

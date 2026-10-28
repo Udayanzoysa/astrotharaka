@@ -14,7 +14,7 @@ const DAY_BANNER_NAMES: Record<number, string> = {
   6: "banner-saturday.jpg",
 };
 
-function getBannerBuffer(dayOfWeek?: number): { buffer: Buffer; fileName: string } | null {
+function getBannerBuffer(dayOfWeek?: number): { buffer: Buffer; fileName: string; mimeType: string } | null {
   const bannerFileName =
     typeof dayOfWeek === "number" && DAY_BANNER_NAMES[dayOfWeek]
       ? DAY_BANNER_NAMES[dayOfWeek]
@@ -36,7 +36,7 @@ function getBannerBuffer(dayOfWeek?: number): { buffer: Buffer; fileName: string
     const filePath = path.join(dir, bannerFileName);
     if (fs.existsSync(filePath)) {
       try {
-        return { buffer: fs.readFileSync(filePath), fileName: bannerFileName };
+        return { buffer: fs.readFileSync(filePath), fileName: bannerFileName, mimeType: "image/jpeg" };
       } catch {
         // ignore
       }
@@ -48,7 +48,45 @@ function getBannerBuffer(dayOfWeek?: number): { buffer: Buffer; fileName: string
     const fallbackPath = path.join(dir, "daily-horoscope-banner.jpg");
     if (fs.existsSync(fallbackPath)) {
       try {
-        return { buffer: fs.readFileSync(fallbackPath), fileName: "daily-horoscope-banner.jpg" };
+        return { buffer: fs.readFileSync(fallbackPath), fileName: "daily-horoscope-banner.jpg", mimeType: "image/jpeg" };
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // 3. Fallback to any banner in candidate banner dirs
+  for (const dir of candidateDirs) {
+    if (fs.existsSync(dir)) {
+      try {
+        const anyBanner = fs.readdirSync(dir).find((f) => f.startsWith("banner-") && (f.endsWith(".jpg") || f.endsWith(".png")));
+        if (anyBanner) {
+          const filePath = path.join(dir, anyBanner);
+          return { buffer: fs.readFileSync(filePath), fileName: anyBanner, mimeType: anyBanner.endsWith(".png") ? "image/png" : "image/jpeg" };
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // 4. Fallback to status images pool if banners are missing
+  const statusDirs = [
+    path.join(process.cwd(), "public/brand/status-images"),
+    path.join(process.cwd(), "apps/web/public/brand/status-images"),
+    "/app/apps/web/public/brand/status-images",
+    "/app/public/brand/status-images",
+  ];
+  for (const dir of statusDirs) {
+    if (fs.existsSync(dir)) {
+      try {
+        const files = fs.readdirSync(dir).filter((f) => f.endsWith(".webp") || f.endsWith(".jpg") || f.endsWith(".png"));
+        if (files.length > 0) {
+          const chosen = files[0];
+          const ext = path.extname(chosen).toLowerCase();
+          const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+          return { buffer: fs.readFileSync(path.join(dir, chosen)), fileName: chosen, mimeType: mime };
+        }
       } catch {
         // ignore
       }
@@ -415,18 +453,29 @@ function buildSinhalaDailyPost(horoscopeData: HoroscopeRecord, slstDateStr: stri
     const careerText = extractText(p?.career);
     const wealthText = extractText(p?.wealth);
 
-    let prediction = summaryText;
+    const isGenericPlaceholder =
+      !summaryText ||
+      summaryText.length < 25 ||
+      summaryText.includes("සුබදායක ප්‍රවණතා ගෙනදෙයි");
+
+    let prediction = isGenericPlaceholder ? def.fallbackPrediction : summaryText;
     if (!prediction || prediction.length < 35) {
       const parts = [summaryText, careerText, wealthText].filter(Boolean);
-      prediction = parts.length > 0 ? parts.join(" ") : def.fallbackPrediction;
+      prediction = parts.length > 0 && !isGenericPlaceholder ? parts.join(" ") : def.fallbackPrediction;
     }
     if (!prediction || prediction.length < 15) {
       prediction = def.fallbackPrediction;
     }
 
-    const luckyColor = extractText(p?.luckyColor) || def.fallbackColor;
-    let luckyNumber = extractText(p?.luckyNumber) || def.fallbackNumber;
-    if (luckyNumber.length === 1) {
+    let luckyColor = extractText(p?.luckyColor);
+    if (!luckyColor || isGenericPlaceholder || luckyColor === "කහ පැහැය") {
+      luckyColor = def.fallbackColor;
+    }
+
+    let luckyNumber = extractText(p?.luckyNumber);
+    if (!luckyNumber || isGenericPlaceholder || luckyNumber === "7" || luckyNumber === "07") {
+      luckyNumber = def.fallbackNumber;
+    } else if (luckyNumber.length === 1) {
       luckyNumber = `0${luckyNumber}`;
     }
 
@@ -615,80 +664,45 @@ async function handleDailyHoroscopeCron(req: NextRequest) {
 
       const slstDayOfWeek = slstTime.getUTCDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
       const bannerInfo = getBannerBuffer(slstDayOfWeek);
-      const bannerFileName =
-        bannerInfo?.fileName ||
-        DAY_BANNER_NAMES[slstDayOfWeek] ||
-        "daily-horoscope-banner.jpg";
-      const publicBannerUrl = `${process.env.WEB_APP_URL || "https://astrotharaka.com"}/brand/banners/${bannerFileName}`;
 
-      console.log(`[AstroTharaka Cron] Using daily banner for day ${slstDayOfWeek}: ${bannerFileName}`);
+      if (!bannerInfo?.buffer) {
+        fbError = "Photo required: No daily banner or status photo available to publish";
+        fbStatus = `FAILED: ${fbError}`;
+        console.error(`[AstroTharaka Cron] ${fbError}`);
+      } else {
+        const bannerFileName = bannerInfo.fileName;
+        console.log(`[AstroTharaka Cron] Using daily banner for day ${slstDayOfWeek}: ${bannerFileName}`);
 
-      const postWithPhoto = async (endpoint: string): Promise<Response> => {
-        if (bannerInfo?.buffer) {
+        const postWithPhoto = async (endpoint: string): Promise<Response> => {
           const formData = new FormData();
           formData.append("caption", caption);
           formData.append("access_token", pageToken);
-          const blob = new Blob([new Uint8Array(bannerInfo.buffer)], { type: "image/jpeg" });
+          const blob = new Blob([new Uint8Array(bannerInfo.buffer)], { type: bannerInfo.mimeType || "image/jpeg" });
           formData.append("source", blob, bannerInfo.fileName);
           return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
             method: "POST",
             body: formData,
           });
-        }
-        return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: publicBannerUrl,
-            caption: caption,
-            access_token: pageToken,
-          }),
-        });
-      };
+        };
 
-      let fbResponse = await postWithPhoto(targetEndpoint);
-      let fbData = (await fbResponse.json()) as FacebookPostResponse;
+        let fbResponse = await postWithPhoto(targetEndpoint);
+        let fbData = (await fbResponse.json()) as FacebookPostResponse;
 
-      // If global ID error (#100) occurs, fallback automatically to /me/photos
-      if (!fbResponse.ok && targetEndpoint !== "me" && fbData?.error?.message?.toLowerCase().includes("global id")) {
-        console.warn("[AstroTharaka Cron] Direct page ID rejected as global ID. Retrying with /me/photos...");
-        fbResponse = await postWithPhoto("me");
-        fbData = (await fbResponse.json()) as FacebookPostResponse;
-      }
-
-      // If photo post fails, fallback to feed text post
-      if (!fbResponse.ok && (fbResponse.status === 400 || fbResponse.status === 403)) {
-        console.warn("[AstroTharaka Cron] Photo post failed, falling back to /feed text post:", fbData?.error?.message);
-        fbResponse = await fetch(`https://graph.facebook.com/v19.0/${targetEndpoint}/feed`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: caption,
-            access_token: pageToken,
-          }),
-        });
-        fbData = (await fbResponse.json()) as FacebookPostResponse;
+        // If global ID error (#100) occurs, fallback automatically to /me/photos
         if (!fbResponse.ok && targetEndpoint !== "me" && fbData?.error?.message?.toLowerCase().includes("global id")) {
-          fbResponse = await fetch("https://graph.facebook.com/v19.0/me/feed", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: caption,
-              access_token: pageToken,
-            }),
-          });
+          console.warn("[AstroTharaka Cron] Direct page ID rejected as global ID. Retrying with /me/photos...");
+          fbResponse = await postWithPhoto("me");
           fbData = (await fbResponse.json()) as FacebookPostResponse;
         }
-      }
 
-      if (!fbResponse.ok) {
-        fbError = fbData?.error?.message || `Facebook API HTTP ${fbResponse.status}`;
-        fbStatus = `FAILED: ${fbError}`;
-        console.error(`[AstroTharaka Cron] Facebook post failed:`, fbError);
-      } else {
-        fbPostId = fbData.id || null;
-        fbStatus = "POSTED";
-        console.log(`[AstroTharaka Cron] Successfully published to Facebook! Post ID: ${fbPostId}`);
+        if (!fbResponse.ok) {
+          fbError = fbData?.error?.message || `Facebook API HTTP ${fbResponse.status}`;
+          fbStatus = `FAILED: ${fbError}`;
+          console.error(`[AstroTharaka Cron] Facebook photo post failed:`, fbError);
+        } else {
+          fbPostId = fbData.id || null;
+          fbStatus = "POSTED";
+        }
       }
 
       // 6. Update database record with social status

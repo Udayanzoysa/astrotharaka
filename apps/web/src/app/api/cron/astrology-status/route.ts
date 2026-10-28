@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { getNextStatusImage } from "@/lib/status-images-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -50,59 +49,28 @@ interface StatusImageInfo {
   buffer: Buffer;
   fileName: string;
   mimeType: string;
+  queuePosition?: number;
+  remainingAfter?: number;
 }
 
 /**
- * Automatically find, rotate, and load status images from public/brand/status-images
+ * Automatically get the next shuffled, one-time-use status image from public/brand/status-images
  */
 function getStatusImage(slot: TimeSlot): StatusImageInfo | null {
-  const candidateDirs = [
-    path.join(process.cwd(), "public/brand/status-images"),
-    path.join(process.cwd(), "apps/web/public/brand/status-images"),
-    "/app/apps/web/public/brand/status-images",
-    "/app/public/brand/status-images",
-  ];
-
-  const validExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-
-  for (const dir of candidateDirs) {
-    if (fs.existsSync(dir)) {
-      try {
-        const files = fs
-          .readdirSync(dir)
-          .filter((f) => validExtensions.includes(path.extname(f).toLowerCase()));
-
-        if (files.length > 0) {
-          // Sort files so order is stable
-          files.sort();
-
-          // Calculate an index rotating by day of month and slot (morning: 0, afternoon: 1, evening: 2)
-          const slotMap: Record<TimeSlot, number> = { morning: 0, afternoon: 1, evening: 2 };
-          const now = new Date();
-          const day = now.getDate();
-          const rotationIndex = (day * 3 + slotMap[slot]) % files.length;
-          const chosenFile = files[rotationIndex];
-
-          const filePath = path.join(dir, chosenFile);
-          const buffer = fs.readFileSync(filePath);
-          const ext = path.extname(chosenFile).toLowerCase();
-          let mimeType = "image/jpeg";
-          if (ext === ".png") mimeType = "image/png";
-          else if (ext === ".webp") mimeType = "image/webp";
-
-          return {
-            buffer,
-            fileName: chosenFile,
-            mimeType,
-          };
-        }
-      } catch (err) {
-        console.warn("[AstroStatus] Error reading status-images directory:", err);
-      }
-    }
+  try {
+    const nextImage = getNextStatusImage(slot);
+    if (!nextImage) return null;
+    return {
+      buffer: nextImage.buffer,
+      fileName: nextImage.fileName,
+      mimeType: nextImage.mimeType,
+      queuePosition: nextImage.queuePosition,
+      remainingAfter: nextImage.remainingAfter,
+    };
+  } catch (err) {
+    console.warn("[AstroStatus] Error retrieving next status image from queue:", err);
+    return null;
   }
-
-  return null;
 }
 
 /**
@@ -287,10 +255,10 @@ async function generateAiStatus(slot: TimeSlot): Promise<string | null> {
   if (!apiKey) return null;
 
   const candidateModels = [
+    "gemini-3.8-flash",
     process.env.GEMINI_MODEL?.trim(),
-    "gemini-2.5-flash",
     "gemini-flash-latest",
-  ].filter((m): m is string => Boolean(m));
+  ].filter((m): m is string => Boolean(m) && m !== "gemini-2.5-flash");
 
   const signs = getRandomSigns(Math.random() > 0.5 ? 4 : 3);
   const selectedSignsText = signs.map((s) => `${s.symbol} ${s.si} (${s.en})`).join(", ");
@@ -402,62 +370,32 @@ async function publishToFacebook(
   const targetEndpoint =
     !pageId || pageId.toLowerCase() === "me" ? "me" : encodeURIComponent(pageId);
 
-  // 1. If image is available, attempt posting as Photo Post
-  if (imageInfo) {
-    try {
-      const postPhoto = async (endpoint: string) => {
-        const formData = new FormData();
-        formData.append("caption", message);
-        formData.append("access_token", pageToken);
-        const blob = new Blob([new Uint8Array(imageInfo.buffer)], { type: imageInfo.mimeType });
-        formData.append("source", blob, imageInfo.fileName);
-
-        return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
-          method: "POST",
-          body: formData,
-        });
-      };
-
-      let response = await postPhoto(targetEndpoint);
-      let data = (await response.json()) as { id?: string; error?: { message?: string } };
-
-      if (
-        !response.ok &&
-        targetEndpoint !== "me" &&
-        data?.error?.message?.toLowerCase().includes("global id")
-      ) {
-        response = await postPhoto("me");
-        data = (await response.json()) as { id?: string; error?: { message?: string } };
-      }
-
-      if (response.ok && data?.id) {
-        return {
-          status: "SUCCESS",
-          postId: data.id,
-          postType: "PHOTO",
-          imageUsed: imageInfo.fileName,
-        };
-      }
-
-      console.warn(
-        `[AstroStatus] Photo upload rejected (${data?.error?.message}), falling back to text feed post...`
-      );
-    } catch (err) {
-      console.warn("[AstroStatus] Photo upload exception, falling back to text feed post:", err);
-    }
+  if (!imageInfo) {
+    return {
+      status: "FAILED_NO_PHOTO",
+      postId: null,
+      postType: "PHOTO",
+      imageUsed: null,
+      error: "Photo required: Cannot publish status without an image photo",
+    };
   }
 
-  // 2. Fallback to Text-only status post
+  // Upload as Photo Post only (Text-only fallback is strictly prohibited)
   try {
-    let response = await fetch(`https://graph.facebook.com/v19.0/${targetEndpoint}/feed`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message,
-        access_token: pageToken,
-      }),
-    });
+    const postPhoto = async (endpoint: string) => {
+      const formData = new FormData();
+      formData.append("caption", message);
+      formData.append("access_token", pageToken);
+      const blob = new Blob([new Uint8Array(imageInfo.buffer)], { type: imageInfo.mimeType });
+      formData.append("source", blob, imageInfo.fileName);
 
+      return fetch(`https://graph.facebook.com/v19.0/${endpoint}/photos`, {
+        method: "POST",
+        body: formData,
+      });
+    };
+
+    let response = await postPhoto(targetEndpoint);
     let data = (await response.json()) as { id?: string; error?: { message?: string } };
 
     if (
@@ -465,41 +403,36 @@ async function publishToFacebook(
       targetEndpoint !== "me" &&
       data?.error?.message?.toLowerCase().includes("global id")
     ) {
-      response = await fetch("https://graph.facebook.com/v19.0/me/feed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          access_token: pageToken,
-        }),
-      });
+      response = await postPhoto("me");
       data = (await response.json()) as { id?: string; error?: { message?: string } };
     }
 
-    if (!response.ok) {
-      const errMsg = data?.error?.message || `HTTP ${response.status}`;
+    if (response.ok && data?.id) {
       return {
-        status: `FAILED: ${errMsg}`,
-        postId: null,
-        postType: "TEXT",
-        imageUsed: null,
-        error: errMsg,
+        status: "SUCCESS",
+        postId: data.id,
+        postType: "PHOTO",
+        imageUsed: imageInfo.fileName,
       };
     }
 
-    return {
-      status: "SUCCESS",
-      postId: data.id || null,
-      postType: "TEXT",
-      imageUsed: null,
-    };
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
+    const errMsg = data?.error?.message || `HTTP ${response.status}`;
+    console.warn(`[AstroStatus] Photo upload rejected: ${errMsg}`);
     return {
       status: `FAILED: ${errMsg}`,
       postId: null,
-      postType: "TEXT",
-      imageUsed: null,
+      postType: "PHOTO",
+      imageUsed: imageInfo.fileName,
+      error: errMsg,
+    };
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.warn("[AstroStatus] Photo upload exception:", err);
+    return {
+      status: `FAILED: ${errMsg}`,
+      postId: null,
+      postType: "PHOTO",
+      imageUsed: imageInfo.fileName,
       error: errMsg,
     };
   }
@@ -558,6 +491,8 @@ async function handleMiddayStatusCron(req: NextRequest) {
     generatedBy,
     postType: fbResult.postType,
     imageUsed: fbResult.imageUsed,
+    queuePosition: imageInfo?.queuePosition ?? null,
+    remainingAfter: imageInfo?.remainingAfter ?? null,
     statusText,
     facebook: fbResult,
     durationMs,
