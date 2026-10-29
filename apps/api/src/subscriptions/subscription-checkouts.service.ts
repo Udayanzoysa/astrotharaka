@@ -17,6 +17,7 @@ import { saveBankSlipFile, resolveBankSlipPath } from '../orders/bank-slip-stora
 import { StartPaymentDto } from '../orders/dto/start-payment.dto';
 import { SubscriptionsService } from './subscriptions.service';
 import { createReadStream, existsSync } from 'fs';
+import { basename, extname } from 'path';
 import { StreamableFile } from '@nestjs/common';
 
 @Injectable()
@@ -517,12 +518,25 @@ export class SubscriptionCheckoutsService {
     return { type: 'unknown' as const };
   }
 
-  private openBankSlip(key: string): StreamableFile {
+  private openBankSlip(key: string) {
     const path = resolveBankSlipPath(key);
     if (!path || !existsSync(path)) {
       throw new AppException(ErrorCodes.NOT_FOUND, 'Bank slip file missing', HttpStatus.NOT_FOUND);
     }
-    return new StreamableFile(createReadStream(path));
+    const ext = extname(path).toLowerCase();
+    const contentType =
+      ext === '.pdf'
+        ? 'application/pdf'
+        : ext === '.png'
+          ? 'image/png'
+          : ext === '.webp'
+            ? 'image/webp'
+            : 'image/jpeg';
+    return {
+      stream: createReadStream(path),
+      filename: basename(path),
+      contentType,
+    };
   }
 
   private nextCheckoutNumber(): string {

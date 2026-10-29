@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateBrandingSettingsDto {
@@ -77,9 +77,18 @@ export class UpdateSeoSettingsDto {
 }
 
 export class UpdateVerificationSettingsDto {
+  @IsOptional()
   @IsString()
-  @IsIn(['EMAIL', 'MOBILE'])
-  verificationMethod!: string;
+  @IsIn(['EMAIL', 'MOBILE', 'NONE'])
+  verificationMethod?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  requireEmailVerification?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  requireMobileVerification?: boolean;
 }
 
 export class UpdateFreemiumSettingsDto {

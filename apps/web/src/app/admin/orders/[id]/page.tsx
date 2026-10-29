@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
 import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
+import { BankSlipModal } from "@/components/admin/bank-slip-modal";
 import { ORDER_ADMIN_ROLES, useAdminAccess } from "@/components/admin/use-admin-access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -77,6 +78,10 @@ export default function AdminOrderDetailPage() {
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [slipModalOpen, setSlipModalOpen] = useState(false);
+  const [selectedSlipPath, setSelectedSlipPath] = useState<string | null>(null);
+  const [selectedSlipRef, setSelectedSlipRef] = useState<string | null>(null);
+  const [selectedSlipAmount, setSelectedSlipAmount] = useState<string | null>(null);
 
   async function load() {
     if (!token) return;
@@ -112,19 +117,11 @@ export default function AdminOrderDetailPage() {
     }
   }
 
-  async function openSlip(path: string) {
-    if (!token) return;
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
-    const res = await fetch(`${apiBase}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) {
-      setActionError("Could not open bank slip");
-      return;
-    }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank", "noopener,noreferrer");
+  function openSlip(path: string, ref?: string | null, amount?: string | null) {
+    setSelectedSlipPath(path);
+    setSelectedSlipRef(ref ?? null);
+    setSelectedSlipAmount(amount ?? null);
+    setSlipModalOpen(true);
   }
 
   if (loading) return <p className="text-muted">Loading…</p>;
@@ -253,7 +250,13 @@ export default function AdminOrderDetailPage() {
                   <button
                     type="button"
                     className="text-xs text-accent hover:underline"
-                    onClick={() => void openSlip(p.slipDownloadPath!)}
+                    onClick={() =>
+                      openSlip(
+                        p.slipDownloadPath!,
+                        p.providerRef,
+                        `${p.currency} ${p.amount.toLocaleString()}`,
+                      )
+                    }
                   >
                     View bank slip
                   </button>
@@ -307,6 +310,15 @@ export default function AdminOrderDetailPage() {
           {order.reports.length === 0 ? <p className="text-sm text-muted">No reports yet.</p> : null}
         </div>
       </Card>
+
+      <BankSlipModal
+        isOpen={slipModalOpen}
+        onClose={() => setSlipModalOpen(false)}
+        slipUrl={selectedSlipPath}
+        token={token}
+        reference={selectedSlipRef}
+        amount={selectedSlipAmount}
+      />
     </div>
   );
 }

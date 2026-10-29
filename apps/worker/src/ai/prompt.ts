@@ -279,7 +279,7 @@ export function buildNarrativePrompts(input: {
         lang,
         focusTopics,
       ),
-      maxOutputTokens: 3072,
+      maxOutputTokens: 8192,
       jsonMode: false,
       temperature: 0.55,
     };

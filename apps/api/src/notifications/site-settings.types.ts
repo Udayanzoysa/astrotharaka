@@ -1,4 +1,4 @@
-﻿export const BRANDING_SETTING_KEYS = {
+export const BRANDING_SETTING_KEYS = {
   siteName: "branding.siteName",
   description: "branding.description",
   slogan: "branding.slogan",
@@ -38,7 +38,7 @@ export const BRANDING_DEFAULTS = {
   colorSecondary: "#13213a",
   colorAccent: "#d4af37",
   buttonStyle: "rounded",
-  defaultLanguage: "en",
+  defaultLanguage: "si",
 } as const;
 
 export const SEO_DEFAULTS = {
@@ -87,4 +87,10 @@ export type FreemiumSettings = {
   guestPreviewLimit: number;
   /** Rolling window (hours) before the guest usage counter resets. */
   guestPreviewWindowHours: number;
+};
+
+export type VerificationSettings = {
+  verificationMethod: string;
+  requireEmailVerification: boolean;
+  requireMobileVerification: boolean;
 };

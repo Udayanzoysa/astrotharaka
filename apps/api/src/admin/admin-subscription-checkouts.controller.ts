@@ -63,7 +63,10 @@ export class AdminSubscriptionCheckoutsController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const file = await this.checkouts.adminGetBankSlip(id, paymentId);
-    res.set({ 'Content-Disposition': 'inline; filename="bank-slip"' });
-    return file;
+    res.set({
+      'Content-Type': file.contentType,
+      'Content-Disposition': `inline; filename="${file.filename}"`,
+    });
+    return new StreamableFile(file.stream);
   }
 }

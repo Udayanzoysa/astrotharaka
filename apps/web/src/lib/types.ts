@@ -33,7 +33,8 @@ export type AuthResponse = {
 };
 
 export type RegisterPendingResponse = {
-  requiresVerification: true;
+  requiresVerification: boolean;
+  accessToken?: string;
   email: string;
   message: string;
   user: User;
@@ -262,3 +263,65 @@ export function productDescription(
   if (lang === "ta") return product.descriptionTa || product.descriptionEn;
   return product.descriptionEn;
 }
+
+export type BlogStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export type BlogComment = {
+  id: string;
+  blogPostId: string;
+  userName: string;
+  userEmail?: string | null;
+  content: string;
+  isApproved: boolean;
+  createdAt: string;
+};
+
+export type BlogPost = {
+  id: string;
+  slug: string;
+  status: BlogStatus;
+  featuredImage?: string | null;
+
+  titleEn: string;
+  titleSi?: string | null;
+  titleTa?: string | null;
+
+  excerptEn?: string | null;
+  excerptSi?: string | null;
+  excerptTa?: string | null;
+
+  contentEn: string;
+  contentSi?: string | null;
+  contentTa?: string | null;
+
+  metaTitleEn?: string | null;
+  metaTitleSi?: string | null;
+  metaTitleTa?: string | null;
+  metaDescEn?: string | null;
+  metaDescSi?: string | null;
+  metaDescTa?: string | null;
+  keywords?: string | null;
+
+  category?: string | null;
+  tags?: string | null;
+  authorName?: string | null;
+  readingTime?: number | null;
+  views: number;
+
+  comments?: BlogComment[];
+  _count?: {
+    comments: number;
+  };
+
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BlogListResponse = {
+  items: BlogPost[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};

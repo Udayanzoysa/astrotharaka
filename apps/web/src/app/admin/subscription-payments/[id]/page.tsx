@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { ApiError, apiRequest } from "@/lib/api";
 import { type SubscriptionCheckout } from "@/lib/types";
 import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
+import { BankSlipModal } from "@/components/admin/bank-slip-modal";
 import { useAdminAccess } from "@/components/admin/use-admin-access";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,6 +32,8 @@ export default function AdminSubscriptionPaymentDetailPage() {
   const [bankAccountId, setBankAccountId] = useState("");
   const [providerRef, setProviderRef] = useState("");
   const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipModalOpen, setSlipModalOpen] = useState(false);
+  const [selectedSlipPaymentId, setSelectedSlipPaymentId] = useState<string | null>(null);
 
   async function load() {
     if (!token) return;
@@ -197,7 +200,10 @@ export default function AdminSubscriptionPaymentDetailPage() {
               <Button
                 variant="ghost"
                 className="mt-2 min-h-9 px-3 text-xs"
-                onClick={() => viewSlip(latestPayment.id)}
+                onClick={() => {
+                  setSelectedSlipPaymentId(latestPayment.id);
+                  setSlipModalOpen(true);
+                }}
               >
                 View bank slip
               </Button>
@@ -261,6 +267,19 @@ export default function AdminSubscriptionPaymentDetailPage() {
         {error ? <p className="mt-3 text-sm text-[var(--danger)]">{error}</p> : null}
         {info ? <p className="mt-3 text-sm text-ink">{info}</p> : null}
       </Card>
+
+      <BankSlipModal
+        isOpen={slipModalOpen}
+        onClose={() => setSlipModalOpen(false)}
+        slipUrl={
+          selectedSlipPaymentId
+            ? `/admin/subscription-checkouts/${params.id}/payments/${selectedSlipPaymentId}/slip`
+            : null
+        }
+        token={token}
+        reference={latestPayment?.providerRef}
+        amount={checkout ? `LKR ${checkout.priceLkr.toLocaleString()}` : null}
+      />
     </div>
   );
 }

@@ -10,7 +10,9 @@ import {
   type BrandingSettings,
   type FreemiumSettings,
   type SeoSettings,
+  type VerificationSettings,
 } from './site-settings.types';
+import type { UpdateVerificationSettingsDto } from './dto/site-settings.dto';
 
 @Injectable()
 export class SiteSettingsService {
@@ -148,17 +150,39 @@ export class SiteSettingsService {
     return new Map(rows.map((r) => [r.key, r.value]));
   }
 
-  async getVerificationSettings(): Promise<{ verificationMethod: string }> {
-    const map = await this.loadKeys(['VERIFICATION_METHOD']);
+  async getVerificationSettings(): Promise<VerificationSettings> {
+    const map = await this.loadKeys([
+      'VERIFICATION_METHOD',
+      'REQUIRE_EMAIL_VERIFICATION',
+      'REQUIRE_MOBILE_VERIFICATION',
+    ]);
     return {
       verificationMethod: map.get('VERIFICATION_METHOD') || 'EMAIL',
+      requireEmailVerification: map.get('REQUIRE_EMAIL_VERIFICATION') === 'true',
+      requireMobileVerification: map.get('REQUIRE_MOBILE_VERIFICATION') === 'true',
     };
   }
 
-  async saveVerificationSettings(input: { verificationMethod: string }): Promise<{ verificationMethod: string }> {
-    await this.upsertMany([
-      { key: 'VERIFICATION_METHOD', value: input.verificationMethod },
-    ]);
+  async saveVerificationSettings(input: UpdateVerificationSettingsDto): Promise<VerificationSettings> {
+    const updates: Array<{ key: string; value: string }> = [];
+    if (input.verificationMethod !== undefined) {
+      updates.push({ key: 'VERIFICATION_METHOD', value: input.verificationMethod });
+    }
+    if (input.requireEmailVerification !== undefined) {
+      updates.push({
+        key: 'REQUIRE_EMAIL_VERIFICATION',
+        value: String(input.requireEmailVerification),
+      });
+    }
+    if (input.requireMobileVerification !== undefined) {
+      updates.push({
+        key: 'REQUIRE_MOBILE_VERIFICATION',
+        value: String(input.requireMobileVerification),
+      });
+    }
+    if (updates.length > 0) {
+      await this.upsertMany(updates);
+    }
     return this.getVerificationSettings();
   }
 

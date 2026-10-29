@@ -16,6 +16,8 @@ type FreemiumSettings = {
 
 type VerificationSettings = {
   verificationMethod: string;
+  requireEmailVerification: boolean;
+  requireMobileVerification: boolean;
 };
 
 type BrandingSettings = {
@@ -103,8 +105,15 @@ export default function AdminSettingsPage() {
           })),
           apiRequest<SmtpPublic>("/admin/settings/smtp", { token }),
           apiRequest<TemplateCatalog>("/admin/settings/email-templates", { token }),
-          apiRequest<VerificationSettings>("/admin/settings/verification", { token }).catch(() => ({ verificationMethod: "EMAIL" })),
+          apiRequest<VerificationSettings>("/admin/settings/verification", { token }).catch(() => ({
+            verificationMethod: "EMAIL",
+            requireEmailVerification: false,
+            requireMobileVerification: false,
+          })),
         ]);
+        if (b && (!b.defaultLanguage || b.defaultLanguage === "")) {
+          b.defaultLanguage = "si";
+        }
         setBranding(b);
         setSeo(s);
         setFreemium(f);
@@ -395,18 +404,120 @@ export default function AdminSettingsPage() {
                     <option value="square">Square</option>
                   </select>
                 </label>
-                <label className="block text-sm text-muted">
-                  Default language
-                  <select
-                    className="mt-1 min-h-11 w-full rounded-xl border border-line bg-[var(--input-bg)] px-3 text-ink"
-                    value={branding.defaultLanguage}
-                    onChange={(e) => setBranding({ ...branding, defaultLanguage: e.target.value })}
+              </div>
+
+              {/* Site Default Language Setting Card */}
+              <div className="rounded-2xl border border-line bg-[color-mix(in_srgb,var(--bg)_80%,#13213a)] p-4 sm:p-5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                  <div>
+                    <h3 className="font-heading text-base font-semibold text-ink flex items-center gap-2">
+                      <span>🌐</span> Site Default Language (වෙබ් අඩවියේ ප්‍රධාන භාෂාව)
+                    </h3>
+                    <p className="mt-1 text-xs text-muted">
+                      Set the default language for the website branding and new visitors. If set to Sinhala, new guests and visitors will automatically experience the site in Sinhala.
+                    </p>
+                  </div>
+                  <div className="self-start sm:self-center">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent border border-accent/30">
+                      Current: {branding.defaultLanguage === "si" || !branding.defaultLanguage ? "සිංහල (Sinhala)" : branding.defaultLanguage === "ta" ? "தமிழ் (Tamil)" : "English"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3 pt-1">
+                  {/* Sinhala Option */}
+                  <label
+                    className={`flex cursor-pointer flex-col justify-between rounded-xl border p-3.5 transition-all ${
+                      (branding.defaultLanguage === "si" || !branding.defaultLanguage)
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-line bg-[var(--input-bg)] hover:border-accent/40"
+                    }`}
                   >
-                    <option value="en">English</option>
-                    <option value="si">Sinhala</option>
-                    <option value="ta">Tamil</option>
-                  </select>
-                </label>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="radio"
+                          name="defaultLanguage"
+                          value="si"
+                          checked={branding.defaultLanguage === "si" || !branding.defaultLanguage}
+                          onChange={() => setBranding({ ...branding, defaultLanguage: "si" })}
+                          className="h-4 w-4 text-accent focus:ring-accent"
+                        />
+                        <span className="text-sm font-semibold text-ink">සිංහල (Sinhala)</span>
+                      </div>
+                      {(branding.defaultLanguage === "si" || !branding.defaultLanguage) && (
+                        <span className="rounded-full bg-accent text-[10px] font-bold text-black px-1.5 py-0.5">
+                          DEFAULT
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs text-muted pl-6">
+                      Recommended for Sri Lankan audience. Automatic Sinhala UI and astrological terms.
+                    </p>
+                  </label>
+
+                  {/* English Option */}
+                  <label
+                    className={`flex cursor-pointer flex-col justify-between rounded-xl border p-3.5 transition-all ${
+                      branding.defaultLanguage === "en"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-line bg-[var(--input-bg)] hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="radio"
+                          name="defaultLanguage"
+                          value="en"
+                          checked={branding.defaultLanguage === "en"}
+                          onChange={() => setBranding({ ...branding, defaultLanguage: "en" })}
+                          className="h-4 w-4 text-accent focus:ring-accent"
+                        />
+                        <span className="text-sm font-semibold text-ink">English</span>
+                      </div>
+                      {branding.defaultLanguage === "en" && (
+                        <span className="rounded-full bg-accent text-[10px] font-bold text-black px-1.5 py-0.5">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs text-muted pl-6">
+                      Standard English interface for global visitors.
+                    </p>
+                  </label>
+
+                  {/* Tamil Option */}
+                  <label
+                    className={`flex cursor-pointer flex-col justify-between rounded-xl border p-3.5 transition-all ${
+                      branding.defaultLanguage === "ta"
+                        ? "border-accent bg-accent/10 ring-1 ring-accent"
+                        : "border-line bg-[var(--input-bg)] hover:border-accent/40"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="radio"
+                          name="defaultLanguage"
+                          value="ta"
+                          checked={branding.defaultLanguage === "ta"}
+                          onChange={() => setBranding({ ...branding, defaultLanguage: "ta" })}
+                          className="h-4 w-4 text-accent focus:ring-accent"
+                        />
+                        <span className="text-sm font-semibold text-ink">தமிழ் (Tamil)</span>
+                      </div>
+                      {branding.defaultLanguage === "ta" && (
+                        <span className="rounded-full bg-accent text-[10px] font-bold text-black px-1.5 py-0.5">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs text-muted pl-6">
+                      Tamil language interface for Tamil speakers.
+                    </p>
+                  </label>
+                </div>
               </div>
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={saving}>
@@ -668,28 +779,82 @@ export default function AdminSettingsPage() {
       {tab === "verification" ? (
         <form
           onSubmit={(e) => void onSaveVerification(e)}
-          className="space-y-4 rounded-2xl border border-line bg-[color-mix(in_srgb,var(--bg)_90%,#13213a)] p-4 sm:p-5"
+          className="space-y-5 rounded-2xl border border-line bg-[color-mix(in_srgb,var(--bg)_90%,#13213a)] p-4 sm:p-5"
         >
           <div>
             <h2 className="font-heading text-lg text-ink">Verification Settings</h2>
-            <p className="mt-1 text-xs text-muted">Configure the default account verification method.</p>
+            <p className="mt-1 text-xs text-muted">
+              Configure user registration and account verification requirements.
+            </p>
           </div>
           {!verification ? (
             <p className="text-sm text-muted">Loading…</p>
           ) : (
             <>
-              <div className="space-y-3">
-                <label className="block text-ink space-y-1.5">
-                  <span className="block text-muted text-sm">Verification Method</span>
-                  <select
-                    value={verification.verificationMethod}
-                    onChange={(e) => setVerification({ ...verification, verificationMethod: e.target.value })}
-                    className="min-h-11 w-full rounded-xl border border-line bg-[var(--input-bg)] px-3 text-ink"
-                  >
-                    <option value="EMAIL">Email Verification (clickable link token)</option>
-                    <option value="MOBILE">Mobile OTP Verification (6-digit code)</option>
-                  </select>
+              <div className="space-y-4">
+                <label className="flex items-start gap-3 rounded-xl border border-line p-3.5 bg-[var(--input-bg)] cursor-pointer hover:border-accent/40 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(verification.requireEmailVerification)}
+                    onChange={(e) =>
+                      setVerification({
+                        ...verification,
+                        requireEmailVerification: e.target.checked,
+                      })
+                    }
+                    className="mt-1 h-4 w-4 rounded border-line text-accent focus:ring-accent"
+                  />
+                  <div>
+                    <span className="block text-ink text-sm font-medium">
+                      Require Email Verification
+                    </span>
+                    <span className="block text-xs text-muted mt-0.5">
+                      When disabled, new users register and activate immediately without an email OTP or verification link.
+                    </span>
+                  </div>
                 </label>
+
+                <label className="flex items-start gap-3 rounded-xl border border-line p-3.5 bg-[var(--input-bg)] cursor-pointer hover:border-accent/40 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(verification.requireMobileVerification)}
+                    onChange={(e) =>
+                      setVerification({
+                        ...verification,
+                        requireMobileVerification: e.target.checked,
+                      })
+                    }
+                    className="mt-1 h-4 w-4 rounded border-line text-accent focus:ring-accent"
+                  />
+                  <div>
+                    <span className="block text-ink text-sm font-medium">
+                      Require Mobile Verification
+                    </span>
+                    <span className="block text-xs text-muted mt-0.5">
+                      When enabled, users must verify their mobile phone number via SMS OTP.
+                    </span>
+                  </div>
+                </label>
+
+                {verification.requireEmailVerification || verification.requireMobileVerification ? (
+                  <label className="block text-ink space-y-1.5 pt-1">
+                    <span className="block text-muted text-sm font-medium">Default Verification Method</span>
+                    <select
+                      value={verification.verificationMethod}
+                      onChange={(e) =>
+                        setVerification({ ...verification, verificationMethod: e.target.value })
+                      }
+                      className="min-h-11 w-full rounded-xl border border-line bg-[var(--input-bg)] px-3 text-ink"
+                    >
+                      <option value="EMAIL">Email Verification (clickable link & OTP code)</option>
+                      <option value="MOBILE">Mobile OTP Verification (6-digit code)</option>
+                    </select>
+                  </label>
+                ) : (
+                  <div className="rounded-xl border border-line/60 bg-[color-mix(in_srgb,var(--bg)_95%,#22c55e)] p-3 text-xs text-ink/80">
+                    ✅ <strong>Instant Registration Active:</strong> Users will register and log in instantly without any email or SMS OTP checks.
+                  </div>
+                )}
               </div>
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={saving}>

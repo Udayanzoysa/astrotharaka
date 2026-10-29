@@ -69,6 +69,12 @@ const links: NavLink[] = [
     roles: ["CONTENT", "SUPER_ADMIN"],
   },
   {
+    href: "/admin/blogs",
+    label: "Blogs & Articles",
+    match: (p) => p.startsWith("/admin/blogs"),
+    roles: ["CONTENT", "SUPER_ADMIN"],
+  },
+  {
     href: "/admin/settings",
     label: "Settings",
     match: (p) => p.startsWith("/admin/settings"),

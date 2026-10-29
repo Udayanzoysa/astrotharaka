@@ -10,10 +10,21 @@ type GeminiResponse = {
     content?: { parts?: Array<{ text?: string }> };
     finishReason?: string;
   }>;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+  };
   error?: { message?: string };
 };
 
-const GEMINI_MODEL_FALLBACKS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+const GEMINI_MODEL_FALLBACKS = [
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-flash-latest',
+  'gemini-3.1-flash-lite',
+];
 
 export class GeminiAdapter implements NarrativeAdapter {
   readonly modelName: string;
@@ -22,7 +33,7 @@ export class GeminiAdapter implements NarrativeAdapter {
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    const preferred = process.env.GEMINI_MODEL?.trim() || 'gemini-flash-latest';
+    const preferred = process.env.GEMINI_MODEL?.trim() || 'gemini-flash-lite-latest';
     this.models = [preferred, ...GEMINI_MODEL_FALLBACKS.filter((m) => m !== preferred)];
     this.modelName = `gemini:${preferred}`;
   }
@@ -66,30 +77,62 @@ export class GeminiAdapter implements NarrativeAdapter {
       model,
     )}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
 
-    const generationConfig: Record<string, unknown> = {
-      temperature,
-      maxOutputTokens,
-    };
-    if (jsonMode) {
-      generationConfig.responseMimeType = 'application/json';
-    }
+    const thinkingBudget = Number(process.env.GEMINI_THINKING_BUDGET ?? 512);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const buildPayload = (includeThinking: boolean) => {
+      const generationConfig: Record<string, unknown> = {
+        temperature,
+        maxOutputTokens,
+      };
+      if (jsonMode) {
+        generationConfig.responseMimeType = 'application/json';
+      }
+      if (includeThinking && thinkingBudget > 0) {
+        generationConfig.thinkingConfig = { thinkingBudget };
+      }
+      return {
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: user }] }],
         generationConfig,
-      }),
+      };
+    };
+
+    let response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPayload(true)),
     });
 
-    const data = (await response.json()) as GeminiResponse;
+    let data = (await response.json()) as GeminiResponse;
+
+    // If model rejects thinkingConfig (HTTP 400), retry once without thinkingConfig
+    if (!response.ok && response.status === 400 && thinkingBudget > 0) {
+      console.warn(`[gemini-adapter] model=${model} rejected thinkingConfig, retrying without it...`);
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildPayload(false)),
+      });
+      data = (await response.json()) as GeminiResponse;
+    }
+
     if (!response.ok) {
       throw new Error(data.error?.message || `Gemini HTTP ${response.status}`);
     }
 
-    const content = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('').trim();
+    const candidate = data.candidates?.[0];
+    if (candidate?.finishReason === 'MAX_TOKENS') {
+      console.warn(
+        `[gemini-adapter] WARNING: model=${model} hit MAX_TOKENS (${maxOutputTokens}). Output may be truncated.`,
+      );
+    }
+    if (data.usageMetadata?.thoughtsTokenCount) {
+      console.log(
+        `[gemini-adapter] model=${model} thinking tokens: ${data.usageMetadata.thoughtsTokenCount}, candidate tokens: ${data.usageMetadata.candidatesTokenCount}`,
+      );
+    }
+
+    const content = candidate?.content?.parts?.map((p) => p.text ?? '').join('').trim();
     if (!content) {
       throw new Error('Empty Gemini response');
     }

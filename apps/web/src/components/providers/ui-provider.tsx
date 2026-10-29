@@ -17,6 +17,7 @@ type Theme = "dark" | "light";
 type UiContextValue = {
   language: Language;
   setLanguage: (lang: Language) => void;
+  applyDefaultLanguage: (defaultLang: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   t: (key: string) => string;
@@ -25,7 +26,7 @@ type UiContextValue = {
 const UiContext = createContext<UiContextValue | null>(null);
 
 export function UiProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>("si");
   const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
@@ -49,6 +50,13 @@ export function UiProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem("taraka_lang", lang);
   }, []);
 
+  const applyDefaultLanguage = useCallback((defaultLang: string) => {
+    const savedLang = window.localStorage.getItem("taraka_lang");
+    if (!savedLang && (defaultLang === "en" || defaultLang === "si" || defaultLang === "ta")) {
+      setLanguageState(defaultLang as Language);
+    }
+  }, []);
+
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
     window.localStorage.setItem("taraka_theme", next);
@@ -58,11 +66,12 @@ export function UiProvider({ children }: { children: ReactNode }) {
     () => ({
       language,
       setLanguage,
+      applyDefaultLanguage,
       theme,
       setTheme,
       t: (key: string) => translate(language, key),
     }),
-    [language, setLanguage, theme, setTheme],
+    [language, setLanguage, applyDefaultLanguage, theme, setTheme],
   );
 
   return <UiContext.Provider value={value}>{children}</UiContext.Provider>;

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { validateProductionConfig } from './common/production-config';
@@ -9,6 +10,8 @@ async function bootstrap(): Promise<void> {
   validateProductionConfig();
 
   const app = await NestFactory.create(AppModule);
+  app.use(json({ limit: '15mb' }));
+  app.use(urlencoded({ limit: '15mb', extended: true }));
   const config = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 

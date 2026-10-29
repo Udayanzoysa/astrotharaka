@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { apiRequest } from "@/lib/api";
+import { useUi } from "@/components/providers/ui-provider";
 
 type PublicSiteSettings = {
   branding: {
@@ -15,6 +16,8 @@ type PublicSiteSettings = {
 
 /** Applies admin branding theme tokens + default language to the document. */
 export function SiteThemeApplier() {
+  const { applyDefaultLanguage } = useUi();
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -26,8 +29,9 @@ export function SiteThemeApplier() {
         root.style.setProperty("--accent", data.branding.colorAccent);
         root.style.setProperty("--accent-hover", data.branding.colorAccent);
         root.dataset.buttonStyle = data.branding.buttonStyle;
-        if (!root.lang || root.lang === "en") {
-          root.lang = data.branding.defaultLanguage || "en";
+        if (data.branding.defaultLanguage) {
+          applyDefaultLanguage(data.branding.defaultLanguage);
+          root.lang = data.branding.defaultLanguage;
         }
       } catch {
         /* keep defaults when API unavailable */
@@ -36,7 +40,8 @@ export function SiteThemeApplier() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [applyDefaultLanguage]);
 
   return null;
 }
+

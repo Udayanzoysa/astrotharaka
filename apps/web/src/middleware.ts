@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https:",
+    `img-src 'self' data: blob: https:${isDev ? " http:" : ""}`,
     "font-src 'self' data:",
     "connect-src 'self' https: http: ws: wss:",
     "media-src 'self' blob:",

@@ -29,6 +29,13 @@ export class AuthService {
     private readonly mail: MailService,
   ) {}
 
+  async isEmailVerificationRequired(): Promise<boolean> {
+    const setting = await this.prisma.systemSetting.findUnique({
+      where: { key: 'REQUIRE_EMAIL_VERIFICATION' },
+    });
+    return setting?.value === 'true';
+  }
+
   async register(dto: RegisterDto) {
     const email = dto.email.toLowerCase();
     const existing = await this.prisma.user.findUnique({ where: { email } });
@@ -42,6 +49,36 @@ export class AuthService {
 
     const saltRounds = Number(this.config.get('BCRYPT_SALT_ROUNDS', 10));
     const passwordHash = await bcrypt.hash(dto.password, saltRounds);
+    const requireEmail = await this.isEmailVerificationRequired();
+
+    if (!requireEmail) {
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          status: UserStatus.ACTIVE,
+          emailVerifiedAt: new Date(),
+          profile: {
+            create: {
+              fullName: dto.fullName,
+              mobileNumber: dto.mobileNumber,
+              preferredLanguage: dto.preferredLanguage ?? 'en',
+            },
+          },
+        },
+        include: { profile: true },
+      });
+
+      const accessToken = await this.signToken(user.id, user.email, user.role);
+
+      return {
+        requiresVerification: false,
+        accessToken,
+        email,
+        message: 'Account registered successfully.',
+        user: this.sanitizeUser(user),
+      };
+    }
 
     const user = await this.prisma.user.create({
       data: {
@@ -67,7 +104,7 @@ export class AuthService {
     });
 
     return {
-      requiresVerification: true as const,
+      requiresVerification: true,
       email,
       message: 'Check your email for a verification link.',
       user: this.sanitizeUser(user),
@@ -109,12 +146,24 @@ export class AuthService {
       );
     }
 
-    if (user.status === UserStatus.PENDING_VERIFICATION || !user.emailVerifiedAt) {
+    const requireEmail = await this.isEmailVerificationRequired();
+    if (requireEmail && (user.status === UserStatus.PENDING_VERIFICATION || !user.emailVerifiedAt)) {
       throw new AppException(
         ErrorCodes.EMAIL_NOT_VERIFIED,
         'Email is not verified. Enter the OTP sent to your email.',
         HttpStatus.FORBIDDEN,
       );
+    }
+
+    if (!requireEmail && (user.status === UserStatus.PENDING_VERIFICATION || !user.emailVerifiedAt)) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          status: UserStatus.ACTIVE,
+          emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+        },
+      });
+      user.status = UserStatus.ACTIVE;
     }
 
     const accessToken = await this.signToken(user.id, user.email, user.role);

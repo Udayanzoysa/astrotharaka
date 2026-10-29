@@ -141,7 +141,7 @@ const I18N = {
 };
 
 export default function DailyHoroscopePage() {
-  const { language, setLanguage } = useUi();
+  const { language } = useUi();
   const lang = (language === "si" || language === "ta" || language === "en" ? language : "si") as Language;
 
   const [selectedPeriod, setSelectedPeriod] = useState<"DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY">("DAILY");
@@ -206,43 +206,6 @@ export default function DailyHoroscopePage() {
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] py-10 px-4 sm:px-6 lg:px-8 font-sans selection:bg-[var(--accent)]/30 selection:text-[var(--accent)]">
       <div className="max-w-5xl mx-auto space-y-10">
-        
-        {/* Language Switcher Bar on Page */}
-        <div className="flex justify-end">
-          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-[var(--bg-card)] border border-[var(--border)] shadow-sm">
-            <button
-              onClick={() => setLanguage("si")}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
-                lang === "si"
-                  ? "bg-[var(--accent)] text-[#0b0f19] shadow-sm font-bold"
-                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
-              }`}
-            >
-              සිංහල
-            </button>
-            <button
-              onClick={() => setLanguage("en")}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
-                lang === "en"
-                  ? "bg-[var(--accent)] text-[#0b0f19] shadow-sm font-bold"
-                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
-              }`}
-            >
-              English
-            </button>
-            <button
-              onClick={() => setLanguage("ta")}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
-                lang === "ta"
-                  ? "bg-[var(--accent)] text-[#0b0f19] shadow-sm font-bold"
-                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
-              }`}
-            >
-              தமிழ்
-            </button>
-          </div>
-        </div>
-
         {/* Main Title & Description */}
         <div className="text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--warning-bg)] border border-[var(--warning-border)] text-xs text-[var(--accent)] font-medium">

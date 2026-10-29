@@ -21,6 +21,7 @@ export function SiteFooter() {
 
   const company: FooterLink[] = [
     { href: "/about", labelKey: "footerAbout" },
+    { href: "/blogs", labelKey: "navBlogs" },
     { href: "/contact", labelKey: "footerContact" },
     { href: "/faq", labelKey: "footerFaq" },
     { href: "/shop", labelKey: "availableServices" },

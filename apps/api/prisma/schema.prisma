@@ -712,3 +712,66 @@ model DailyHoroscope {
   @@index([createdAt])
 }
 
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id              String        @id @default(uuid())
+  slug            String        @unique
+  status          BlogStatus    @default(DRAFT)
+  featuredImage   String?
+
+  titleEn         String
+  titleSi         String?
+  titleTa         String?
+
+  excerptEn       String?       @db.Text
+  excerptSi       String?       @db.Text
+  excerptTa       String?       @db.Text
+
+  contentEn       String        @db.Text
+  contentSi       String?       @db.Text
+  contentTa       String?       @db.Text
+
+  metaTitleEn     String?
+  metaTitleSi     String?
+  metaTitleTa     String?
+  metaDescEn      String?       @db.Text
+  metaDescSi      String?       @db.Text
+  metaDescTa      String?       @db.Text
+  keywords        String?
+
+  category        String?       @default("Astrology")
+  tags            String?
+  authorName      String?       @default("Taraka Team")
+  readingTime     Int?          @default(3)
+  views           Int           @default(0)
+
+  comments        BlogComment[]
+
+  publishedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([slug])
+}
+
+model BlogComment {
+  id          String    @id @default(uuid())
+  blogPostId  String
+  blogPost    BlogPost  @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  userId      String?
+  userName    String
+  userEmail   String?
+  content     String    @db.Text
+  isApproved  Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([blogPostId, createdAt])
+}
+

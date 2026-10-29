@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { ApiError, apiRequest } from "@/lib/api";
 import type { Language, RegisterPendingResponse } from "@/lib/types";
+import { useAuth } from "@/components/providers/auth-provider";
 import { useUi } from "@/components/providers/ui-provider";
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Field } from "@/components/ui/field";
 
 export default function RegisterPage() {
   const { t, language, setLanguage } = useUi();
+  const { setSession } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,6 +44,11 @@ export default function RegisterPage() {
       });
       if (result.user.profile?.preferredLanguage) {
         setLanguage(result.user.profile.preferredLanguage as Language);
+      }
+      if (result.accessToken) {
+        setSession({ accessToken: result.accessToken, user: result.user });
+        router.push("/dashboard");
+        return;
       }
       const q = new URLSearchParams({ email, registered: "1" });
       router.push(`/verify-email?${q.toString()}`);
