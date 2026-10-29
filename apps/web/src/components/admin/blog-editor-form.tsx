@@ -110,14 +110,15 @@ export function BlogEditorForm({ initialData, token, isEdit }: BlogEditorFormPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!titleEn.trim()) {
-      setError("English Title is required as the primary title.");
-      setActiveLang("en");
+    const primaryTitle = titleEn.trim() || titleSi.trim() || titleTa.trim();
+    const primaryContent = contentEn.trim() || contentSi.trim() || contentTa.trim();
+
+    if (!primaryTitle) {
+      setError("Please provide a Title in at least one language.");
       return;
     }
-    if (!contentEn.trim()) {
-      setError("English Content is required as the primary article.");
-      setActiveLang("en");
+    if (!primaryContent) {
+      setError("Please provide Article Content in at least one language.");
       return;
     }
 
@@ -127,16 +128,16 @@ export function BlogEditorForm({ initialData, token, isEdit }: BlogEditorFormPro
       setSuccess("");
 
       const payload = {
-        titleEn: titleEn.trim(),
+        titleEn: titleEn.trim() || primaryTitle,
         titleSi: titleSi.trim() || undefined,
         titleTa: titleTa.trim() || undefined,
         slug: slug.trim() || undefined,
         status,
         featuredImage: featuredImage.trim() || undefined,
-        excerptEn: excerptEn.trim() || undefined,
+        excerptEn: excerptEn.trim() || excerptSi.trim() || excerptTa.trim() || undefined,
         excerptSi: excerptSi.trim() || undefined,
         excerptTa: excerptTa.trim() || undefined,
-        contentEn: contentEn.trim(),
+        contentEn: contentEn.trim() || primaryContent,
         contentSi: contentSi.trim() || undefined,
         contentTa: contentTa.trim() || undefined,
         metaTitleEn: metaTitleEn.trim() || undefined,

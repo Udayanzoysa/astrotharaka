@@ -178,7 +178,9 @@ export class BlogsService {
   }
 
   async adminCreatePost(dto: CreateBlogPostDto) {
-    const rawSlug = dto.slug?.trim() || dto.titleEn;
+    const titleEn = dto.titleEn?.trim() || dto.titleSi?.trim() || dto.titleTa?.trim() || 'Untitled Article';
+    const contentEn = dto.contentEn?.trim() || dto.contentSi?.trim() || dto.contentTa?.trim() || '<p></p>';
+    const rawSlug = dto.slug?.trim() || dto.titleEn?.trim() || dto.titleSi?.trim() || dto.titleTa?.trim() || 'article';
     const slug = await this.ensureUniqueSlug(rawSlug);
 
     const readingTime =
@@ -192,19 +194,19 @@ export class BlogsService {
         slug,
         status: dto.status || BlogStatus.DRAFT,
         featuredImage: dto.featuredImage,
-        titleEn: dto.titleEn,
+        titleEn,
         titleSi: dto.titleSi,
         titleTa: dto.titleTa,
-        excerptEn: dto.excerptEn,
+        excerptEn: dto.excerptEn || dto.excerptSi || dto.excerptTa,
         excerptSi: dto.excerptSi,
         excerptTa: dto.excerptTa,
-        contentEn: dto.contentEn,
+        contentEn,
         contentSi: dto.contentSi,
         contentTa: dto.contentTa,
-        metaTitleEn: dto.metaTitleEn || dto.titleEn,
+        metaTitleEn: dto.metaTitleEn || dto.titleEn || titleEn,
         metaTitleSi: dto.metaTitleSi || dto.titleSi,
         metaTitleTa: dto.metaTitleTa || dto.titleTa,
-        metaDescEn: dto.metaDescEn || dto.excerptEn,
+        metaDescEn: dto.metaDescEn || dto.excerptEn || dto.excerptSi,
         metaDescSi: dto.metaDescSi || dto.excerptSi,
         metaDescTa: dto.metaDescTa || dto.excerptTa,
         keywords: dto.keywords,
