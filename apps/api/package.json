@@ -27,6 +27,7 @@
     "bullmq": "^5.56.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "express": "^5.3.0",
     "ioredis": "^5.6.1",
     "nodemailer": "^9.0.3",
     "passport": "^0.7.0",
