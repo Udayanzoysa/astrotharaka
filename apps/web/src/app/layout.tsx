@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Script from "next/script";
-import {
-  Abhaya_Libre,
-  Cinzel,
-  Noto_Sans_Sinhala,
-  Noto_Serif_Sinhala,
-  Poppins,
-} from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { UiProvider } from "@/components/providers/ui-provider";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -24,48 +17,6 @@ import "./globals.css";
 
 /** Required so per-request CSP nonces from middleware are applied to scripts. */
 export const dynamic = "force-dynamic";
-
-const cinzel = Cinzel({
-  variable: "--font-cinzel",
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  display: "optional",
-  preload: false,
-});
-
-const poppins = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
-
-const notoSinhala = Noto_Sans_Sinhala({
-  variable: "--font-noto-sinhala",
-  subsets: ["sinhala"],
-  weight: ["400", "600"],
-  display: "swap",
-  adjustFontFallback: true,
-});
-
-/** Display Sinhala — optional so late swap does not inflate CLS. */
-const abhayaLibre = Abhaya_Libre({
-  variable: "--font-abhaya",
-  subsets: ["sinhala", "latin"],
-  weight: ["600", "700"],
-  display: "optional",
-  preload: false,
-  adjustFontFallback: true,
-});
-
-const notoSerifSinhala = Noto_Serif_Sinhala({
-  variable: "--font-noto-serif-sinhala",
-  subsets: ["sinhala"],
-  weight: ["400", "600"],
-  display: "optional",
-  preload: false,
-  adjustFontFallback: true,
-});
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
 
@@ -180,9 +131,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en-LK" data-theme="dark" suppressHydrationWarning>
-      <body
-        className={`${cinzel.variable} ${poppins.variable} ${notoSinhala.variable} ${abhayaLibre.variable} ${notoSerifSinhala.variable} antialiased`}
-      >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Abhaya+Libre:wght@600;700&family=Cinzel:wght@600;700&family=Noto+Sans+Sinhala:wght@400;600&family=Noto+Serif+Sinhala:wght@400;600&family=Poppins:wght@400;500;600&display=swap"
+        />
+      </head>
+      <body className="antialiased">
         {gaId ? (
           <>
             <Script
