@@ -135,23 +135,6 @@ export default function AdminSubscriptionPaymentDetailPage() {
     }
   }
 
-  async function viewSlip(paymentId: string) {
-    if (!token) return;
-    try {
-      const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
-      const res = await fetch(
-        `${base}/admin/subscription-checkouts/${params.id}/payments/${paymentId}/slip`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (!res.ok) throw new Error("slip fetch failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-    } catch {
-      setError("Could not open bank slip");
-    }
-  }
-
   if (loading) return <p className="text-muted">Loading…</p>;
   if (denied) return <p className="text-sm text-[var(--danger)]">{denied}</p>;
   if (!allowed) return null;

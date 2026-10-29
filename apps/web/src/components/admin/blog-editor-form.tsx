@@ -100,8 +100,8 @@ export function BlogEditorForm({ initialData, token, isEdit }: BlogEditorFormPro
       setError("");
       const url = await handleUploadImageFile(file);
       setFeaturedImage(url);
-    } catch (err: any) {
-      setError(`Cover image upload failed: ${err?.message}`);
+    } catch (err: unknown) {
+      setError(`Cover image upload failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsUploadingCover(false);
       if (coverInputRef.current) coverInputRef.current.value = "";
@@ -170,8 +170,8 @@ export function BlogEditorForm({ initialData, token, isEdit }: BlogEditorFormPro
           router.push(`/admin/blogs/${created.id}`);
         }, 800);
       }
-    } catch (err: any) {
-      setError(err?.message || "Failed to save article.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save article.");
     } finally {
       setIsSubmitting(false);
     }
@@ -187,8 +187,8 @@ export function BlogEditorForm({ initialData, token, isEdit }: BlogEditorFormPro
       setComments((prev) =>
         prev.map((c) => (c.id === commentId ? { ...c, isApproved: !c.isApproved } : c)),
       );
-    } catch (err: any) {
-      alert(`Could not toggle comment: ${err?.message}`);
+    } catch (err: unknown) {
+      alert(`Could not toggle comment: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -201,8 +201,8 @@ export function BlogEditorForm({ initialData, token, isEdit }: BlogEditorFormPro
         token,
       });
       setComments((prev) => prev.filter((c) => c.id !== commentId));
-    } catch (err: any) {
-      alert(`Could not delete comment: ${err?.message}`);
+    } catch (err: unknown) {
+      alert(`Could not delete comment: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 

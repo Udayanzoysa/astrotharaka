@@ -35,7 +35,8 @@ export async function GET(
         "Cache-Control": cacheControl,
       },
     });
-  } catch (err: any) {
-    return new NextResponse(err?.message || "Failed to fetch media", { status: 502 });
+  } catch (err: unknown) {
+    return new NextResponse(err instanceof Error ? err.message : "Failed to fetch media", { status: 502 });
   }
 }
+

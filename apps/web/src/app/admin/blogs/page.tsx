@@ -34,8 +34,8 @@ export default function AdminBlogsPage() {
       });
       setItems(res.items || []);
       setTotal(res.total || 0);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load blogs");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load blogs");
     } finally {
       setIsLoading(false);
     }
@@ -65,8 +65,8 @@ export default function AdminBlogsPage() {
             : item,
         ),
       );
-    } catch (err: any) {
-      alert(`Could not update status: ${err?.message}`);
+    } catch (err: unknown) {
+      alert(`Could not update status: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -82,8 +82,8 @@ export default function AdminBlogsPage() {
       });
       setItems((prev) => prev.filter((item) => item.id !== blog.id));
       setTotal((t) => Math.max(0, t - 1));
-    } catch (err: any) {
-      alert(`Failed to delete post: ${err?.message}`);
+    } catch (err: unknown) {
+      alert(`Failed to delete post: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -96,7 +96,7 @@ export default function AdminBlogsPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-heading text-xl font-bold text-accent">Blog Articles & Insights</h1>
+          <h1 className="font-heading text-xl font-bold text-accent">Blog Articles & Insights ({total})</h1>
           <p className="text-xs text-muted mt-1">
             Publish SEO-friendly astrology articles in 3 languages (English, Sinhala, Tamil).
           </p>

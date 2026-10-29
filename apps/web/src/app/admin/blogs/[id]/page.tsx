@@ -21,8 +21,8 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
         setError("");
         const data = await apiRequest<BlogPost>(`/admin/blogs/${id}`, { token });
         setBlog(data);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load blog post");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load blog post");
       } finally {
         setLoading(false);
       }

@@ -7,7 +7,7 @@ import { useUi } from "@/components/providers/ui-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiRequest } from "@/lib/api";
 import { getApiUrl } from "@/lib/env";
-import type { BlogPost, BlogComment, Language } from "@/lib/types";
+import type { BlogPost, BlogComment } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
 function resolveImageUrl(url?: string | null): string {
@@ -103,8 +103,8 @@ export function BlogArticleClient({ initialPost }: { initialPost: BlogPost }) {
       setComments((prev) => [newComment, ...prev]);
       setCommentText("");
       setCommentSuccess("Your comment has been posted! Thank you for sharing your thoughts.");
-    } catch (err: any) {
-      setCommentError(err?.message || "Could not submit your comment. Please try again.");
+    } catch (err: unknown) {
+      setCommentError(err instanceof Error ? err.message : "Could not submit your comment. Please try again.");
     } finally {
       setIsSubmittingComment(false);
     }

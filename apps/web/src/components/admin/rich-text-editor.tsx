@@ -86,8 +86,8 @@ export function RichTextEditor({
         editorRef.current?.focus();
         exec("insertImage", imageUrl);
       }
-    } catch (err: any) {
-      alert(`Image upload failed: ${err?.message || "Unknown error"}`);
+    } catch (err: unknown) {
+      alert(`Image upload failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

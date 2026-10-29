@@ -6,7 +6,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useUi } from "@/components/providers/ui-provider";
 import { apiRequest } from "@/lib/api";
 import { getApiUrl } from "@/lib/env";
-import type { BlogPost, BlogListResponse, Language } from "@/lib/types";
+import type { BlogPost, BlogListResponse } from "@/lib/types";
 
 function resolveImageUrl(url?: string | null): string {
   if (!url) return "";
@@ -51,8 +51,8 @@ export default function BlogsPage() {
 
         const res = await apiRequest<BlogListResponse>(`/blogs?${params.toString()}`);
         setBlogs(res.items || []);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load blog posts");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load blog posts");
       } finally {
         setLoading(false);
       }
