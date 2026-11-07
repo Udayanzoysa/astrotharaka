@@ -331,11 +331,22 @@ async function generateAiStatus(slot: TimeSlot, slstTime?: Date): Promise<string
   const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) return null;
 
-  const candidateModels = [
-    "gemini-3.8-flash",
+  const rawModels = [
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
     process.env.GEMINI_MODEL?.trim(),
+    "gemini-3.5-flash",
+    "gemini-3.8-flash",
     "gemini-flash-latest",
-  ].filter((m): m is string => Boolean(m) && m !== "gemini-2.5-flash");
+  ];
+  const candidateModels = Array.from(
+    new Set(
+      rawModels.filter(
+        (m): m is string =>
+          typeof m === "string" && m.length > 0 && !m.includes("2.5")
+      )
+    )
+  );
 
   const validSlstTime = slstTime || new Date(Date.now() + 5.5 * 60 * 60 * 1000);
   let prompt: string;
@@ -413,38 +424,76 @@ async function generateAiStatus(slot: TimeSlot, slstTime?: Date): Promise<string
         model
       )}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 1024,
-          },
-        }),
-      });
+      // Models with thinking (gemini-3.5-flash / gemini-3.8-flash) can consume all tokens on thought,
+      // so we try thinkingBudget: 0 first. Models that do not support thinking (flash-lite) return 400,
+      // in which case we fall back to the standard config.
+      const configs = [
+        {
+          temperature: 0.8,
+          maxOutputTokens: 2048,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+        {
+          temperature: 0.8,
+          maxOutputTokens: 2048,
+        },
+      ];
 
-      if (!res.ok) continue;
+      for (const config of configs) {
+        try {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: config,
+            }),
+          });
 
-      const data = (await res.json()) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-      };
-
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (text && text.length > 50) {
-        let cleanText = text.replace(/```[a-z]*\n?/gi, "").trim();
-        if (slot === "evening") {
-          if (!cleanText.includes("https://astrotharaka.com/daily-horoscope")) {
-            cleanText = cleanText + "\n\nසම්පූර්ණ ලග්න පලාපල: https://astrotharaka.com/daily-horoscope";
+          if (!res.ok) {
+            if (res.status === 400 && "thinkingConfig" in config) {
+              continue;
+            }
+            break; // Try next model
           }
-        } else {
-          // Ensure https://astrotharaka.com is present
-          if (!cleanText.includes("https://astrotharaka.com")) {
-            cleanText = cleanText + "\n\n" + FREE_KENDARA_PROMO;
+
+          const data = (await res.json()) as {
+            candidates?: Array<{
+              finishReason?: string;
+              content?: { parts?: Array<{ text?: string }> };
+            }>;
+          };
+
+          const candidate = data?.candidates?.[0];
+          const finishReason = candidate?.finishReason;
+          const text = candidate?.content?.parts?.[0]?.text?.trim();
+
+          // Reject incomplete / truncated responses (e.g. cutting off mid-sentence)
+          if (finishReason && finishReason !== "STOP") {
+            console.warn(
+              `[AstroStatus] Model ${model} returned non-STOP finishReason: ${finishReason}, skipping...`
+            );
+            continue;
           }
+
+          if (text && text.length > 120) {
+            let cleanText = text.replace(/```[a-z]*\n?/gi, "").trim();
+            if (slot === "evening") {
+              if (!cleanText.includes("https://astrotharaka.com/daily-horoscope")) {
+                cleanText =
+                  cleanText + "\n\nසම්පූර්ණ ලග්න පලාපල: https://astrotharaka.com/daily-horoscope";
+              }
+            } else {
+              // Ensure https://astrotharaka.com is present
+              if (!cleanText.includes("https://astrotharaka.com")) {
+                cleanText = cleanText + "\n\n" + FREE_KENDARA_PROMO;
+              }
+            }
+            return cleanText;
+          }
+        } catch {
+          // try next config
         }
-        return cleanText;
       }
     } catch {
       // try next model
